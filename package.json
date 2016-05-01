@@ -1,23 +1,20 @@
 {
   "name": "realtime-multiplayer-in-html5",
-  "author": "Sven Bergström",
-  "description": "An article and demo explaining how multiplayer games work, with a demo in HTML5 using socket.io, node.js and canvas.",
+  "author": "Arjan Frans",
+  "description": "Realtime multiplayer with socket.io",
   "license": "MIT",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "scripts": {
-    "start": "nodemon app.js",
+    "start": "nodemon ./server/index.js",
     "client": "webpack-dev-server --colors --devtool source-map",
     "ci": "npm run cover",
     "lint": "eslint lib",
-    "test": "mocha ./test --es_staging --harmony-proxies --recursive --check-leaks --colors"
+    "test": "mocha ./test --recursive --check-leaks --colors"
   },
   "dependencies": {
     "express": "^4.13.4",
     "node-uuid": "^1.4.7",
     "socket.io": "^1.4.5"
-  },
-  "engine": {
-    "node": "0.10.x"
   },
   "devDependencies": {
     "babel-loader": "^6.2.4",

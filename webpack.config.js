@@ -4,7 +4,7 @@ const path = require('path');
 
 module.exports = {
     devtool: 'cheap-eval-source-map',
-    entry: './client.js',
+    entry: './client/index.js',
     output: {
         path: path.join(__dirname, '/dist'),
         filename: 'bundle.js'

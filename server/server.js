@@ -1,7 +1,7 @@
 'use strict';
 
 const uuid = require('node-uuid');
-const GameCore = require('./server/core');
+const GameCore = require('./game');
 
 function create () {
     const gameServer = { games: {}, game_count: 0 };
@@ -92,125 +92,107 @@ function create () {
 
     }; //gameServer.createGame
 
-    //we are requesting to kill a game in progress.
-    gameServer.endGame = function(gameid, userid) {
+    // we are requesting to kill a game in progress.
+    gameServer.endGame = function(gameId, userid) {
+        const thegame = this.games[gameId];
 
-        var thegame = this.games[gameid];
-
-        if(thegame) {
-
-            //stop the game updates immediate
+        if (thegame) {
+            // stop the game updates immediate
             thegame.gamecore.stop();
 
-            //if the game has two players, the one is leaving
-            if(thegame.player_count > 1) {
+            // if the game has two players, the one is leaving
+            if (thegame.player_count > 1) {
+                // send the players the message the game is ending
+                if (userid === thegame.player_host.userid) {
+                    // the host left. Lets try join another game
 
-                //send the players the message the game is ending
-                if(userid == thegame.player_host.userid) {
-
-                    //the host left, oh snap. Lets try join another game
-                    if(thegame.player_client) {
-                        //tell them the game is over
+                    if (thegame.player_client) {
+                        // tell them the game is over
                         thegame.player_client.send('s.e');
-                        //now look for/create a new game.
+
+                        // now look for/create a new game.
                         this.findGame(thegame.player_client);
                     }
-
                 } else {
-                    //the other player left, we were hosting
-                    if(thegame.player_host) {
-                        //tell the client the game is ended
+                    // the other player left, we were hosting
+                    if (thegame.player_host) {
+                        // tell the client the game is ended
                         thegame.player_host.send('s.e');
-                        //i am no longer hosting, this game is going down
+
+                        // i am no longer hosting, this game is going down
                         thegame.player_host.hosting = false;
-                        //now look for/create a new game.
+
+                        // now look for/create a new game.
                         this.findGame(thegame.player_host);
                     }
                 }
             }
 
-            delete this.games[gameid];
-            this.game_count--;
+            delete this.games[gameId];
+            this.game_count -= 1;
 
             this.log('game removed. there are now ' + this.game_count + ' games' );
-
         } else {
             this.log('that game was not found!');
         }
+    };
 
-    }; //gameServer.endGame
-
-    gameServer.startGame = function(game) {
-
-        //right so a game has 2 players and wants to begin
-        //the host already knows they are hosting,
-        //tell the other client they are joining a game
-        //s=server message, j=you are joining, send them the host id
+    gameServer.startGame = function (game) {
+        // right so a game has 2 players and wants to begin
+        // the host already knows they are hosting,
+        // tell the other client they are joining a game
+        // s=server message, j=you are joining, send them the host id
         game.player_client.send('s.j.' + game.player_host.userid);
         game.player_client.game = game;
 
-        //now we tell both that the game is ready to start
-        //clients will reset their positions in this case.
+        // now we tell both that the game is ready to start
+        // clients will reset their positions in this case.
         game.player_client.send('s.r.'+ String(game.gamecore.local_time).replace('.','-'));
         game.player_host.send('s.r.'+ String(game.gamecore.local_time).replace('.','-'));
 
-        //set this flag, so that the update loop can run it.
+        // set this flag, so that the update loop can run it.
         game.active = true;
-
-    }; //gameServer.startGame
+    };
 
     gameServer.findGame = function(player) {
-
         this.log('looking for a game. We have : ' + this.game_count);
 
-        //so there are games active,
-        //lets see if one needs another player
-        if(this.game_count) {
+        // so there are games active,
+        // lets see if one needs another player
+        if (this.game_count > 0) {
+            let joined_a_game = false;
 
-            var joined_a_game = false;
+            // Check the list of games for an open game
+            for (const gameId of Object.keys(this.games)) {
+                const gameInstance = this.games[gameId];
 
-            //Check the list of games for an open game
-            for(var gameid in this.games) {
-                //only care about our own properties.
-                if(!this.games.hasOwnProperty(gameid)) continue;
-                //get the game we are checking against
-                var game_instance = this.games[gameid];
-
-                //If the game is a player short
-                if(game_instance.player_count < 2) {
-
-                    //someone wants us to join!
+                // If the game is a player short
+                if (gameInstance.player_count < 2) {
+                    // someone wants us to join!
                     joined_a_game = true;
-                    //increase the player count and store
-                    //the player as the client of this game
-                    game_instance.player_client = player;
-                    game_instance.gamecore.players.other.instance = player;
-                    game_instance.player_count++;
 
-                    //start running the game on the server,
-                    //which will tell them to respawn/start
-                    this.startGame(game_instance);
+                    // increase the player count and store
+                    // the player as the client of this game
+                    gameInstance.player_client = player;
+                    gameInstance.gamecore.players.other.instance = player;
+                    gameInstance.player_count += 1;
 
-                } //if less than 2 players
-            } //for all games
+                    // start running the game on the server
+                    this.startGame(gameInstance);
+                }
+            }
 
-            //now if we didn't join a game,
-            //we must create one
-            if(!joined_a_game) {
-
+            // if we didn't join a game, we must create one
+            if (!joined_a_game) {
                 this.createGame(player);
-
-            } //if no join already
-
-        } else { //if there are any games at all
-
-            //no games? create one!
+            }
+        } else {
+            // no games? create one!
             this.createGame(player);
         }
-
     };
 
     return gameServer;
-};
+}
 
 module.exports = { create };

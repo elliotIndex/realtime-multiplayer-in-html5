@@ -1,11 +1,11 @@
 'use strict';
 
-const MainLoop = require('./server/mainloop');
+const MainLoop = require('../lib/mainloop');
 const SocketClient = require('socket.io-client');
 const SERVER_URL = 'http://localhost:4004';
-const Player = require('./Player');
-const Vector = require('./lib/vector');
-const fixedNumber = require('./lib/fixed-number');
+const Player = require('../lib/Player');
+const Vector = require('../lib/vector');
+const fixedNumber = require('../lib/fixed-number');
 
 const PHYSICS_FPS = 66;
 const DEBUG = true;
@@ -487,7 +487,7 @@ game_core.prototype.client_update = function(renderer, interpolation) {
 
     //When we are doing client side prediction, we smooth out our position
     //across frames using local input states we have stored.
-    this.client_update_local_position();
+    // this.client_update_local_position();
 
     //And then we finally draw
     this.players.self.draw(renderer);
@@ -833,6 +833,7 @@ class GameClient extends game_core {
 
         this._physicsLoop = MainLoop.create().setSimulationTimestep(1000 / PHYSICS_FPS).setUpdate((delta) => {
             this.client_handle_input(delta);
+            this.client_update_local_position(delta);
             this.update_physics(delta);
             this.local_time += delta / 1000;
         }).setDraw(updateView);

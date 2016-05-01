@@ -1,9 +1,9 @@
 'use strict';
 
-const GameClient = require('./game.core');
+const GameClient = require('./game');
+const Renderer = require('./view');
 
 window.onload = function(){
-
     //Create our game client instance.
     const game = new GameClient();
 
@@ -24,5 +24,4 @@ window.onload = function(){
 
     //Finally, start the loop
     game.start(canvas);
-
 };

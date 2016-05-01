@@ -1,7 +1,7 @@
 'use strict';
 
-const MainLoop = require('./mainloop');
-const Player = require('../Player');
+const MainLoop = require('../lib/mainloop');
+const Player = require('../lib/Player');
 const Vector = require('../lib/vector');
 const fixedNumber = require('../lib/fixed-number');
 

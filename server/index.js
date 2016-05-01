@@ -2,7 +2,7 @@
 
 const PORT = process.env.PORT || 4004;
 const SocketServer = require('socket.io');
-const GameServer = require('./game.server');
+const GameServer = require('./server');
 const express = require('express');
 const uuid = require('node-uuid');
 const verbose = false;
