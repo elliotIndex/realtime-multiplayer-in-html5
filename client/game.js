@@ -74,10 +74,6 @@ const game_core = function(game_instance){
     this.color = localStorage.getItem('color') || '#cc8822' ;
     localStorage.setItem('color', this.color);
     this.players.self.color = this.color;
-
-    if (DEBUG) {
-        this.client_create_debug_gui();
-    }
 };
 
 game_core.prototype.check_collision = function( item ) {
@@ -467,46 +463,15 @@ game_core.prototype.client_update_physics = function(delta) {
     }
 };
 
-game_core.prototype.client_update = function(renderer, interpolation) {
-    //Clear the screen area
-    renderer.ctx.clearRect(0,0,720,480);
-
-    //draw help/information if required
-    this.client_draw_info(renderer);
-
+game_core.prototype.client_update = function(interpolation) {
     //Network player just gets drawn normally, with interpolation from
     //the server updates, smoothing out the positions from the past.
     //Note that if we don't have prediction enabled - this will also
     //update the actual local client position on screen as well.
-    if( !this.naive_approach ) {
+    if(!this.naive_approach) {
         this.client_process_net_updates(interpolation);
     }
-
-    //Now they should have updated, we can draw the entity
-    this.players.other.draw(renderer);
-
-    //When we are doing client side prediction, we smooth out our position
-    //across frames using local input states we have stored.
-    // this.client_update_local_position();
-
-    //And then we finally draw
-    this.players.self.draw(renderer);
-
-    //and these
-    if(this.show_dest_pos && !this.naive_approach) {
-        this.ghosts.pos_other.draw(renderer);
-    }
-
-    //and lastly draw these
-    if(this.show_server_pos && !this.naive_approach) {
-        this.ghosts.server_pos_self.draw(renderer);
-        this.ghosts.server_pos_other.draw(renderer);
-    }
-
-    //Work out the fps average
-    this.client_refresh_fps();
-
-}; //game_core.update_client
+};
 
 game_core.prototype.client_create_ping_timer = function() {
 
@@ -545,72 +510,9 @@ game_core.prototype.client_create_configuration = function() {
     this.client_time = 0.01;            //Our local 'clock' based on server time - client interpolation(net_offset).
     this.server_time = 0.01;            //The time the server reported it was at, last we heard from it
 
-    this.dt = 0.016;                    //The time that the last frame took to run
-    this.fps = 0;                       //The current instantaneous fps (1/this.dt)
-    this.fps_avg_count = 0;             //The number of samples we have taken for fps_avg
-    this.fps_avg = 0;                   //The current average fps displayed in the debug UI
-    this.fps_avg_acc = 0;               //The accumulation of the last avgcount fps samples
-
     this.lit = 0;
     this.llt = new Date().getTime();
 };
-
-game_core.prototype.client_create_debug_gui = function() {
-    this.gui = new dat.GUI();
-
-    var _playersettings = this.gui.addFolder('Your settings');
-
-    this.colorcontrol = _playersettings.addColor(this, 'color');
-
-    //We want to know when we change our color so we can tell
-    //the server to tell the other clients for us
-    this.colorcontrol.onChange(function(value) {
-        this.players.self.color = value;
-        localStorage.setItem('color', value);
-        this.socket.send('c.' + value);
-    }.bind(this));
-
-    _playersettings.open();
-
-    var _othersettings = this.gui.addFolder('Methods');
-
-    _othersettings.add(this, 'naive_approach').listen();
-    _othersettings.add(this, 'client_smoothing').listen();
-    _othersettings.add(this, 'client_smooth').listen();
-    _othersettings.add(this, 'client_predict').listen();
-
-    var _debugsettings = this.gui.addFolder('Debug view');
-
-    _debugsettings.add(this, 'show_help').listen();
-    _debugsettings.add(this, 'fps_avg').listen();
-    _debugsettings.add(this, 'show_server_pos').listen();
-    _debugsettings.add(this, 'show_dest_pos').listen();
-    _debugsettings.add(this, 'local_time').listen();
-
-    _debugsettings.open();
-
-    var _consettings = this.gui.addFolder('Connection');
-    _consettings.add(this, 'net_latency').step(0.001).listen();
-    _consettings.add(this, 'net_ping').step(0.001).listen();
-
-    //When adding fake lag, we need to tell the server about it.
-    var lag_control = _consettings.add(this, 'fake_lag').step(0.001).listen();
-    lag_control.onChange(function(value){
-        this.socket.send('l.' + value);
-    }.bind(this));
-
-    _consettings.open();
-
-    var _netsettings = this.gui.addFolder('Networking');
-
-    _netsettings.add(this, 'net_offset').min(0.01).step(0.001).listen();
-    _netsettings.add(this, 'server_time').step(0.001).listen();
-    _netsettings.add(this, 'client_time').step(0.001).listen();
-    //_netsettings.add(this, 'oldest_tick').step(0.001).listen();
-
-    _netsettings.open();
-
-}; //game_core.client_create_debug_gui
 
 game_core.prototype.client_reset_positions = function() {
 
@@ -748,7 +650,6 @@ game_core.prototype.client_ondisconnect = function(data) {
 
     this.players.other.info_color = 'rgba(255,255,255,0.1)';
     this.players.other.state = 'not-connected';
-
 };
 
 game_core.prototype.client_connect_to_server = function() {
@@ -774,66 +675,23 @@ game_core.prototype.client_connect_to_server = function() {
     this.socket.on('message', this.client_onnetmessage.bind(this));
 };
 
-
-game_core.prototype.client_refresh_fps = function() {
-
-    //We store the fps for 10 frames, by adding it to this accumulator
-    this.fps = 1/this.dt;
-    this.fps_avg_acc += this.fps;
-    this.fps_avg_count++;
-
-    //When we reach 10 frames we work out the average fps
-    if(this.fps_avg_count >= 10) {
-
-        this.fps_avg = this.fps_avg_acc / 10;
-        this.fps_avg_count = 1;
-        this.fps_avg_acc = this.fps;
-
-    } //reached 10 frames
-};
-
-
-game_core.prototype.client_draw_info = function(renderer) {
-
-    // We don't want this to be too distracting
-    renderer.ctx.fillStyle = 'rgba(255,255,255,0.3)';
-
-    // They can hide the help with the debug GUI
-    if(this.show_help) {
-        renderer.ctx.fillText('net_offset : local offset of others players and their server updates. Players are net_offset "in the past" so we can smoothly draw them interpolated.', 10 , 30);
-        renderer.ctx.fillText('server_time : last known game time on server', 10 , 70);
-        renderer.ctx.fillText('client_time : delayed game time on client for other players only (includes the net_offset)', 10 , 90);
-        renderer.ctx.fillText('net_latency : Time from you to the server. ', 10 , 130);
-        renderer.ctx.fillText('net_ping : Time from you to the server and back. ', 10 , 150);
-        renderer.ctx.fillText('fake_lag : Add fake ping/lag for testing, applies only to your inputs (watch server_pos block!). ', 10 , 170);
-        renderer.ctx.fillText('client_smoothing/client_smooth : When updating players information from the server, it can smooth them out.', 10 , 210);
-        renderer.ctx.fillText(' This only applies to other clients when prediction is enabled, and applies to local player with no prediction.', 170 , 230);
-
-    } //if this.show_help
-
-    //Draw some information for the host
-    if(this.players.self.host) {
-        renderer.ctx.fillStyle = 'rgba(255,255,255,0.7)';
-        renderer.ctx.fillText('You are the host', 10 , 465);
-    }
-
-
-    //Reset the style back to full white.
-    renderer.ctx.fillStyle = 'rgba(255,255,255,1)';
-};
-
 class GameClient extends game_core {
     constructor (renderer) {
         super();
         this._renderer = null;
 
         const updateView = (interpolation) => {
-            this.client_update(this._renderer, interpolation);
+            this.client_update(interpolation);
+            this._renderer.draw(this);
         }
 
         this._physicsLoop = MainLoop.create().setSimulationTimestep(1000 / PHYSICS_FPS).setUpdate((delta) => {
             this.client_handle_input(delta);
+
+            //When we are doing client side prediction, we smooth out our position
+            //across frames using local input states we have stored.
             this.client_update_local_position(delta);
+
             this.update_physics(delta);
             this.local_time += delta / 1000;
         }).setDraw(updateView);
