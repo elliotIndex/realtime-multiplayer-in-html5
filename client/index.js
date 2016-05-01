@@ -4,10 +4,11 @@ const GameClient = require('./game');
 const Renderer = require('./view');
 const debugView = require('./view/debug');
 const DEBUG = true;
+const config = require('./config');
 
 window.onload = function () {
     // Create our game client instance.
-    const game = new GameClient();
+    const game = new GameClient(config);
 
     const canvas = {};
 
@@ -24,7 +25,7 @@ window.onload = function () {
     // Set the draw style for the font
     canvas.ctx.font = '11px "Helvetica"';
 
-    const renderer = Renderer(canvas.ctx, game);
+    const renderer = Renderer(canvas.ctx, game.options);
 
     if (DEBUG) {
         debugView(game);
