@@ -2,10 +2,8 @@
 
 const uuid = require('node-uuid');
 const GameCore = require('./game');
-const serverConfig = require('./server-config');
-const gameConfig = require('../lib/game-config');
 
-function create () {
+function create (config) {
     const gameServer = { games: {}, game_count: 0 };
     const verbose = true;
 
@@ -50,12 +48,11 @@ function create () {
         //the client should be in a game, so
         //we can tell that game to handle the input
         if(client && client.game && client.game.gamecore) {
-            client.game.gamecore.handle_server_input(client, input_commands, input_time, input_seq);
+            client.game.gamecore.receiveClientInput(client, input_commands, input_time, input_seq);
         }
 
-    }; //gameServer.onInput
+    };
 
-    //Define some required functions
     gameServer.createGame = function(player) {
 
         //Create a new game instance
@@ -74,7 +71,7 @@ function create () {
 
         //Create a new game core instance, this actually runs the
         //game code like collisions and such.
-        thegame.gamecore = new GameCore(thegame, Object.assign({}, gameConfig, serverConfig));
+        thegame.gamecore = new GameCore(thegame, config);
         //Start updating the game loop on the server
         // thegame.gamecore.update( new Date().getTime() );
         thegame.gamecore.start();
@@ -89,11 +86,8 @@ function create () {
 
         this.log('player ' + player.userid + ' created a game with id ' + player.game.id);
 
-        //return it
         return thegame;
-
-    }; //gameServer.createGame
-
+    };
     // we are requesting to kill a game in progress.
     gameServer.endGame = function(gameId, userid) {
         const thegame = this.games[gameId];

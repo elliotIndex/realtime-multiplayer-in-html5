@@ -1,5 +1,7 @@
 'use strict';
 
+const dat = require('../../lib/dat-gui');
+
 function debugView (game) {
     const gui = new dat.GUI();
     const playersettings = gui.addFolder('Your settings');
@@ -11,7 +13,7 @@ function debugView (game) {
     game.colorcontrol.onChange((value) => {
         game.players.self.color = value;
         localStorage.setItem('color', value);
-        game.socket.send('c.' + value);
+        game._network.send('c.' + value); // FIXME Not very nice
     });
 
     playersettings.open();

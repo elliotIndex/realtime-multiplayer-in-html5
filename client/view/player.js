@@ -23,7 +23,7 @@ function draw (ctx, player, options = {}) {
 
     const stateText = options.stateText || '';
 
-    ctx.fillText(stateText, player.pos.x + 10, player.pos.y + 4);
+    ctx.fillText(stateText, player.pos.x + (player.size.x / 1.5), player.pos.y + (player.size.y / 4));
 }
 
 module.exports = draw;

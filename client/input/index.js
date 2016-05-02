@@ -1,7 +1,9 @@
 'use strict';
 
+const KeyboardState = require('../../lib/keyboard');
+
 function inputHandler () {
-    const keyboard = new THREEx.KeyboardState();
+    const keyboard = new KeyboardState();
 
     function getInput () {
         // This takes input from the client and keeps a record,

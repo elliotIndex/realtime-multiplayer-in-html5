@@ -121,12 +121,6 @@ function networkGameEvents (game, socket) {
                 game.server_updates.splice(0, 1);
             }
 
-            // We can see when the last tick we know of happened.
-            // If client_time gets behind game due to latency, a snap occurs
-            // to the last tick. Unavoidable, and a reallly bad connection here.
-            // If that happens it might be best to drop the game after a period of time.
-            game.oldest_tick = game.server_updates[0].t;
-
             // Handle the latest positions from the server
             // and make sure to correct our local predictions, making the server have final say.
             game.client_process_net_prediction_correction();

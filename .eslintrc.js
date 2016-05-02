@@ -253,7 +253,8 @@ module.exports = {
             "error",
             "never"
         ],
-        "valid-jsdoc": "error",
+        // "valid-jsdoc": "error",
+        "valid-jsdoc": "off",
         "vars-on-top": "off",
         "wrap-iife": "error",
         "wrap-regex": "error",

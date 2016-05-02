@@ -7,6 +7,7 @@ const Player = require('../lib/Player');
 const Vector = require('../lib/vector');
 const fixedNumber = require('../lib/fixed-number');
 const CollisionHandler = require('../lib/collision');
+const processInput = require('../lib/physics/process-input');
 
 function game_core (options) {
     // We create a player set, passing them
@@ -15,9 +16,6 @@ function game_core (options) {
         self: new Player(this),
         other: new Player(this)
     };
-
-    this.players.self.isLocalPlayer = true;
-    this.players.other.isLocalPlayer = false;
 
     // Debugging ghosts, to help visualise things
     this.ghosts = {
@@ -29,12 +27,14 @@ function game_core (options) {
         pos_other: new Player(this)
     };
 
-    this.ghosts.server_pos_self.pos = { x: 20, y: 20 };
-    this.ghosts.pos_other.pos = { x: 500, y: 200 };
-    this.ghosts.server_pos_other.pos = { x: 500, y: 200 };
+    this.ghosts.server_pos_self.pos = Vector.copy(options.playerPositions[0]);
+    this.ghosts.pos_other.pos = Vector.copy(options.playerPositions[1]);
+    this.ghosts.server_pos_other.pos = Vector.copy(options.playerPositions[1]);
 
     // The speed at which the clients move.
-    this.playerspeed = options.playerSpeed;
+    this.players.self.speed = options.playerSpeed;
+    this.players.other.speed = options.playerSpeed;
+
 
     // A local timer for precision on client
     this.local_time = 0;
@@ -44,7 +44,6 @@ function game_core (options) {
     this.net_latency = 0.001;    // the latency between the client and the server (ping/2)
     this.last_ping_time = 0.001; // The time we last sent a ping
     this.target_time = 0.01;     // the time where we want to be in the server timeline
-    this.oldest_tick = 0.01;     // the last time tick we have available in the buffer
     this.client_time = 0.01;     // Our local 'clock' based on server time - client interpolation(net_offset).
     this.server_time = 0.01;     // The time the server reported it was at, last we heard from it
 
@@ -53,67 +52,10 @@ function game_core (options) {
     this.server_updates = [];
 
     // Set their colors from the storage or locally
-    this.color = localStorage.getItem('color') || '#cc8822';
-
-    localStorage.setItem('color', this.color);
+    this.color = '#cc8822';
 
     this.players.self.color = this.color;
 }
-
-game_core.prototype.process_input = function(player, delta) {
-    // It's possible to have recieved multiple inputs by now,
-    // so we process each one
-    let x_dir = 0;
-    let y_dir = 0;
-    const ic = player.inputs.length;
-
-    if (ic) {
-        for (let j = 0; j < ic; ++j) {
-            // don't process ones we already have simulated locally
-            if (player.inputs[j].seq > player.last_input_seq) {
-                const input = player.inputs[j].inputs;
-
-                for (let i = 0; i < input.length; ++i) {
-                    const key = input[i];
-
-                    if (key === 'l') {
-                        x_dir -= 1;
-                    }
-                    if (key === 'r') {
-                        x_dir += 1;
-                    }
-                    if (key === 'd') {
-                        y_dir += 1;
-                    }
-                    if (key === 'u') {
-                        y_dir -= 1;
-                    }
-                }
-            }
-        }
-    }
-
-    // we have a direction vector now, so apply the same physics as the client
-    const resulting_vector = this.physics_movement_vector_from_direction(x_dir, y_dir, delta);
-
-    if (player.inputs.length) {
-        // we can now clear the array since these have been processed
-
-        player.last_input_time = player.inputs[ic-1].time;
-        player.last_input_seq = player.inputs[ic-1].seq;
-    }
-
-    //give it back
-    return resulting_vector;
-
-};
-
-game_core.prototype.physics_movement_vector_from_direction = function(x, y, delta) {
-    return {
-        x: fixedNumber(x * (this.playerspeed * (delta / 1000)), 3),
-        y: fixedNumber(y * (this.playerspeed * (delta / 1000)), 3)
-    };
-};
 
 game_core.prototype.client_process_net_prediction_correction = function () {
     // No updates
@@ -172,7 +114,7 @@ game_core.prototype.client_process_net_prediction_correction = function () {
 
 game_core.prototype.client_process_net_updates = function (interpolation) {
     // No updates
-    if (!this.server_updates.length) {
+    if (this.server_updates.length === 0) {
         return;
     }
 
@@ -220,21 +162,12 @@ game_core.prototype.client_process_net_updates = function (interpolation) {
 
         const difference = this.target_time - current_time;
         const max_difference = fixedNumber(target.t - previous.t, 3);
-        let time_point = fixedNumber(difference / max_difference, 3);
+        let timePoint = fixedNumber(difference / max_difference, 3);
 
         // Because we use the same target and previous in extreme cases
-        // It is possible to get incorrect values due to division by 0 difference
-        // and such. This is a safe guard and should probably not be here. lol.
-        if (Number.isNaN(time_point)) {
-            time_point = 0;
-        }
-
-        if (time_point === Number.NEGATIVE_INFINITY) {
-            time_point = 0;
-        }
-
-        if (time_point === Number.POSITIVE_INFINITY) {
-            time_point = 0;
+        // It is possible to get incorrect values due to division by 0 difference and such.
+        if (Number.isNaN(timePoint) || Math.abs(timePoint) === Number.POSITIVE_INFINITY) {
+            timePoint = 0;
         }
 
         // The most recent server update
@@ -250,7 +183,7 @@ game_core.prototype.client_process_net_updates = function (interpolation) {
         // update the dest block, this is a simple lerp
         // to the target from the previous point in the server_updates buffer
         this.ghosts.server_pos_other.pos = Vector.copy(other_server_pos);
-        this.ghosts.pos_other.pos = Vector.lerp(other_past_pos, other_target_pos, time_point);
+        this.ghosts.pos_other.pos = Vector.lerp(other_past_pos, other_target_pos, timePoint);
 
         if (this.options.client_smoothing) {
             this.players.other.pos = Vector.lerp(this.players.other.pos, this.ghosts.pos_other.pos, interpolation);
@@ -270,7 +203,7 @@ game_core.prototype.client_process_net_updates = function (interpolation) {
 
             // Snap the ghost to the new server position
             this.ghosts.server_pos_self.pos = Vector.copy(my_server_pos);
-            const local_target = Vector.lerp(my_past_pos, my_target_pos, time_point);
+            const local_target = Vector.lerp(my_past_pos, my_target_pos, timePoint);
 
             // Smoothly follow the destination position
             if (this.options.client_smoothing) {
@@ -298,7 +231,7 @@ game_core.prototype.client_update_physics = function(delta) {
     if (this.options.client_predict) {
         this.players.self.old_state.pos = Vector.copy(this.players.self.cur_state.pos);
 
-        const nd = this.process_input(this.players.self, delta);
+        const nd = processInput(this.players.self, delta);
 
         this.players.self.cur_state.pos = Vector.add(this.players.self.old_state.pos, nd);
         this.players.self.state_time = this.local_time;
@@ -320,8 +253,8 @@ game_core.prototype.client_reset_positions = function() {
     const player_client = this.players.self.host ? this.players.other : this.players.self;
 
     // Host always spawns at the top left.
-    player_host.pos = { x: 20, y: 20 };
-    player_client.pos = { x: 500, y: 200 };
+    player_host.pos = Vector.copy(this.options.playerPositions[0]);
+    player_client.pos = Vector.copy(this.options.playerPositions[1]);
 
     // Make sure the local player physics is updated
     this.players.self.old_state.pos = Vector.copy(this.players.self.pos);
