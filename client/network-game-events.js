@@ -2,41 +2,72 @@
 
 const Vector = require('../lib/vector');
 
-function networkGameEvents (game) {
-    function onMessage (message) {
-        const commands = message.split('.');
-        const command = commands[0];
-        const subcommand = commands[1] || null;
-        const commanddata = commands[2] || null;
+function networkClientEvents (game, socket) {
+    function onHostGame (data) {
+        // The server sends the time when asking us to host, but it should be a new game.
+        // so the value will be really small anyway (15 or 16ms)
+        const serverTime = Number.parseFloat(data.replace('-', '.'));
 
-        switch (command) {
-            case 's': {
-                switch (subcommand) {
-                    case 'h': // host a game requested
-                        game.client_onhostgame(commanddata);
+        // Get an estimate of the current time on the server
+        game.local_time = serverTime + game.net_latency;
 
-                        break;
-                    case 'j': // join a game requested
-                        game.client_onjoingame(commanddata);
+        // Set the flag that we are hosting, this helps us position respawns correctly
+        game.players.self.host = true;
 
-                        break;
-                    case 'r': // ready a game requested
-                        game.client_onreadygame(commanddata);
+        // Update debugging information to display state
+        game.players.self.state = 'hosting.waiting for a player';
+        game.players.self.info_color = '#cc0000';
 
-                        break;
-                    case 'e': // end game requested
-                        game.client_ondisconnect(commanddata);
-
-                        break;
-                    case 'c': // other player changed colors
-                        game.client_on_otherclientcolorchange(commanddata);
-
-                        break;
-                }
-                break;
-            }
-        }
+        // Make sure we start in the correct place as the host.
+        game.client_reset_positions();
     }
+
+    function onJoinGame () {
+        // We are not the host
+        game.players.self.host = false;
+        // Update the local state
+        game.players.self.state = 'connected.joined.waiting';
+        game.players.self.info_color = '#00bb00';
+
+        // Make sure the positions match servers and other clients
+        game.client_reset_positions();
+    }
+
+    function onColorChange (data) {
+        game.players.other.color = data;
+    }
+
+    function onReadyGame (data) {
+        const server_time = Number.parseFloat(data.replace('-', '.'));
+        const player_host = game.players.self.host ? game.players.self : game.players.other;
+        const player_client = game.players.self.host ? game.players.other : game.players.self;
+
+        game.local_time = server_time + game.net_latency;
+
+        console.log('server time is about ' + game.local_time);
+
+        // Store their info colors for clarity. server is always blue
+        player_host.info_color = '#2288cc';
+        player_client.info_color = '#cc8822';
+
+        // Update their information
+        player_host.state = 'local_pos(hosting)';
+        player_client.state = 'local_pos(joined)';
+
+        // Make sure colors are synced up
+        socket.send('c.' + game.players.self.color);
+    }
+
+    return {
+        onHostGame,
+        onJoinGame,
+        onColorChange,
+        onReadyGame
+    };
+}
+
+function networkGameEvents (game, socket) {
+    const clientEvents = networkClientEvents(game, socket);
 
     function onConnect () {
         game.players.self.state = 'connecting';
@@ -111,6 +142,41 @@ function networkGameEvents (game) {
 
         game.players.other.info_color = 'rgba(255,255,255,0.1)';
         game.players.other.state = 'not-connected';
+    }
+
+    function onMessage (message) {
+        const commands = message.split('.');
+        const command = commands[0];
+        const subcommand = commands[1] || null;
+        const commanddata = commands[2] || null;
+
+        switch (command) {
+            case 's': {
+                switch (subcommand) {
+                    case 'h': // host a game requested
+                        clientEvents.onHostGame(commanddata);
+
+                        break;
+                    case 'j': // join a game requested
+                        clientEvents.onJoinGame(commanddata);
+
+                        break;
+                    case 'r': // ready a game requested
+                        clientEvents.onReadyGame(commanddata);
+
+                        break;
+                    case 'e': // end game requested
+                        onDisconnect(commanddata);
+
+                        break;
+                    case 'c': // other player changed colors
+                        clientEvents.onColorChange(commanddata);
+
+                        break;
+                }
+                break;
+            }
+        }
     }
 
     return {

@@ -4,19 +4,13 @@ const MainLoop = require('../lib/mainloop');
 const Player = require('../lib/Player');
 const Vector = require('../lib/vector');
 const fixedNumber = require('../lib/fixed-number');
+const CollisionHandler = require('../lib/collision');
 
 const NETWORK_FPS = 45;
-const PHYSICS_FPS = 66;
 
 var game_core = function(game_instance){
     // Store the instance, if any
     this.instance = game_instance;
-
-    // Used in collision etc.
-    this.world = {
-        width: 720,
-        height: 480
-    };
 
     // We create a player set, passing them
     // the game that is running them, as well
@@ -27,40 +21,12 @@ var game_core = function(game_instance){
 
     this.players.self.pos = { x: 20, y: 20 };
 
-    // The speed at which the clients move.
-    this.playerspeed = 120;
 
     // A local timer for precision on server
-    this.local_time = PHYSICS_FPS / 1000 / 1000;
+    this.local_time = 0;
 
     this.server_time = 0;
     this.laststate = {};
-};
-
-game_core.prototype.check_collision = function( item ) {
-    // Left wall.
-    if (item.pos.x <= item.pos_limits.x_min) {
-        item.pos.x = item.pos_limits.x_min;
-    }
-
-    // Right wall
-    if (item.pos.x >= item.pos_limits.x_max) {
-        item.pos.x = item.pos_limits.x_max;
-    }
-
-    // Roof wall.
-    if (item.pos.y <= item.pos_limits.y_min) {
-        item.pos.y = item.pos_limits.y_min;
-    }
-
-    // Floor wall
-    if (item.pos.y >= item.pos_limits.y_max) {
-        item.pos.y = item.pos_limits.y_max;
-    }
-
-    // Fixed point helps be more deterministic
-    item.pos.x = fixedNumber(item.pos.x, 4);
-    item.pos.y = fixedNumber(item.pos.y, 4);
 };
 
 game_core.prototype.process_input = function (player, delta) {
@@ -71,7 +37,7 @@ game_core.prototype.process_input = function (player, delta) {
     if (ic) {
         for (let j = 0; j < ic; ++j) {
             // don't process ones we already have simulated locally
-            if(player.inputs[j].seq > player.last_input_seq) {
+            if (player.inputs[j].seq > player.last_input_seq) {
 
                 const input = player.inputs[j].inputs;
                 const c = input.length;
@@ -110,8 +76,8 @@ game_core.prototype.process_input = function (player, delta) {
 
 game_core.prototype.physics_movement_vector_from_direction = function(x, y, delta) {
     return {
-        x: fixedNumber(x * (this.playerspeed * (delta / 1000)), 3),
-        y: fixedNumber(y * (this.playerspeed * (delta / 1000)), 3)
+        x: fixedNumber(x * (this.playerSpeed * (delta / 1000)), 3),
+        y: fixedNumber(y * (this.playerSpeed * (delta / 1000)), 3)
     };
 };
 
@@ -127,10 +93,6 @@ game_core.prototype.server_update_physics = function (delta) {
     this.players.other.old_state.pos = Vector.copy(this.players.other.pos);
     var other_new_dir = this.process_input(this.players.other, delta);
     this.players.other.pos = Vector.add(this.players.other.old_state.pos, other_new_dir);
-
-    //Keep the physics position in the world
-    this.check_collision( this.players.self );
-    this.check_collision( this.players.other );
 
     this.players.self.inputs = []; //we have cleared the input buffer, so remove this
     this.players.other.inputs = []; //we have cleared the input buffer, so remove this
@@ -173,19 +135,28 @@ game_core.prototype.handle_server_input = function(client, input, input_time, in
 };
 
 class GameCore extends game_core {
-    constructor (...args) {
-        super(...args);
+    constructor (gameInstance, options) {
+        super(gameInstance, options);
+        this.options = options;
+
+        this._collisionHandler = CollisionHandler(options.world);
+        this.playerSpeed = options.playerSpeed;
 
         const updateNetwork = () => {
             this.server_update();
         };
 
-        this._physicsLoop = MainLoop.create().setSimulationTimestep(1000 / PHYSICS_FPS).setUpdate((delta) => {
+        this._physicsLoop = MainLoop.create().setSimulationTimestep(options.simulationTimestemp).setUpdate((delta) => {
             this.server_update_physics(delta);
+
+            // Keep the physics position in the world
+            this._collisionHandler.process(this.players.self);
+            this._collisionHandler.process(this.players.other);
+
             this.local_time += delta / 1000;
         });
 
-        this._networkLoop = MainLoop.create().setSimulationTimestep(1000 / NETWORK_FPS).setUpdate(updateNetwork);
+        this._networkLoop = MainLoop.create().setSimulationTimestep(options.networkTimestep).setUpdate(updateNetwork);
     }
 
     start () {

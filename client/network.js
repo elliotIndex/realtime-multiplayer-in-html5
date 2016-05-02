@@ -23,7 +23,7 @@ function network () {
     }
 
     function listen (game) {
-        const gameEvents = NetworkGameEvents(game);
+        const gameEvents = NetworkGameEvents(game, socket);
 
         socket.on('connect', gameEvents.onConnect);
 
@@ -56,11 +56,17 @@ function network () {
         return {
             listen,
             ping,
+
             get netPing () {
                 return netPing;
             },
+
             get netLatency () {
                 return netLatency;
+            },
+
+            send (data) {
+                socket.send(data);
             }
         };
     }

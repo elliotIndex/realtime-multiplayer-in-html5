@@ -10,6 +10,7 @@ function draw (ctx, player, options = {}) {
     // Draw a rectangle for us
     const x = player.pos.x - player.size.hx;
     const y = player.pos.y - player.size.hy;
+
     const width = player.size.x;
     const height = player.size.y;
 

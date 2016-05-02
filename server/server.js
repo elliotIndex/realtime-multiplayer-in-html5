@@ -2,6 +2,8 @@
 
 const uuid = require('node-uuid');
 const GameCore = require('./game');
+const serverConfig = require('./server-config');
+const gameConfig = require('../lib/game-config');
 
 function create () {
     const gameServer = { games: {}, game_count: 0 };
@@ -72,7 +74,7 @@ function create () {
 
         //Create a new game core instance, this actually runs the
         //game code like collisions and such.
-        thegame.gamecore = new GameCore( thegame );
+        thegame.gamecore = new GameCore(thegame, Object.assign({}, gameConfig, serverConfig));
         //Start updating the game loop on the server
         // thegame.gamecore.update( new Date().getTime() );
         thegame.gamecore.start();

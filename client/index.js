@@ -4,11 +4,12 @@ const GameClient = require('./game');
 const Renderer = require('./view');
 const debugView = require('./view/debug');
 const DEBUG = true;
-const config = require('./config');
+const clientConfig = require('./client-config');
+const gameConfig = require('../lib/game-config');
 
 window.onload = function () {
     // Create our game client instance.
-    const game = new GameClient(config);
+    const game = new GameClient(Object.assign({}, clientConfig, gameConfig));
 
     const canvas = {};
 
@@ -16,8 +17,8 @@ window.onload = function () {
     canvas.viewport = document.getElementById('viewport');
 
     // Adjust their size
-    canvas.viewport.width = game.world.width;
-    canvas.viewport.height = game.world.height;
+    canvas.viewport.width = gameConfig.world.width;
+    canvas.viewport.height = gameConfig.world.height;
 
     // Fetch the rendering contexts
     canvas.ctx = canvas.viewport.getContext('2d');
