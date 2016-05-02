@@ -4,7 +4,7 @@ function debugView (game) {
     const gui = new dat.GUI();
     const playersettings = gui.addFolder('Your settings');
 
-    game.colorcontrol = playersettings.addColor(game, 'color');
+    game.colorcontrol = playersettings.addColor(game.players.self, 'color');
 
     // We want to know when we change our color so we can tell
     // the server to tell the other clients for us

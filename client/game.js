@@ -26,25 +26,18 @@ function game_core (options){
         other: new Player(this)
     };
 
+    this.players.self.isLocalPlayer = true;
+    this.players.other.isLocalPlayer = false;
+
     // Debugging ghosts, to help visualise things
     this.ghosts = {
         // Our ghost position on the server
         server_pos_self: new Player(this),
-        //The other players server position as we receive it
+        // The other players server position as we receive it
         server_pos_other: new Player(this),
-        //The other players ghost destination position (the lerp)
+        // The other players ghost destination position (the lerp)
         pos_other: new Player(this)
     };
-
-    this.ghosts.pos_other.state = 'dest_pos';
-
-    this.ghosts.pos_other.info_color = 'rgba(255,255,255,0.1)';
-
-    this.ghosts.server_pos_self.info_color = 'rgba(255,255,255,0.2)';
-    this.ghosts.server_pos_other.info_color = 'rgba(255,255,255,0.2)';
-
-    this.ghosts.server_pos_self.state = 'server_pos';
-    this.ghosts.server_pos_other.state = 'server_pos';
 
     this.ghosts.server_pos_self.pos = { x: 20, y: 20 };
     this.ghosts.pos_other.pos = { x: 500, y: 200 };
@@ -219,11 +212,13 @@ game_core.prototype.client_handle_input = function (delta){
     }
 };
 
-game_core.prototype.client_process_net_prediction_correction = function (delta) {
+game_core.prototype.client_process_net_prediction_correction = function () {
     // No updates
     if (this.server_updates.length === 0) {
         return;
     }
+
+    const delta = 1000 / PHYSICS_FPS;
 
     // The most recent server update
     const latest_server_data = this.server_updates[this.server_updates.length - 1];
@@ -384,57 +379,6 @@ game_core.prototype.client_process_net_updates = function(interpolation) {
     }
 };
 
-game_core.prototype.client_onserverupdate_recieved = function (data) {
-    //Lets clarify the information we have locally. One of the players is 'hosting' and
-    //the other is a joined in client, so we name these host and client for making sure
-    //the positions we get from the server are mapped onto the correct local sprites
-    let player_host = this.players.self.host ?  this.players.self : this.players.other;
-    let player_client = this.players.self.host ?  this.players.other : this.players.self;
-    let this_player = this.players.self;
-
-    //Store the server time (this is offset by the latency in the network, by the time we get it)
-    this.server_time = data.t;
-    //Update our local offset time from the last server update
-    this.client_time = this.server_time - (this.options.net_offset / 1000);
-
-    //One approach is to set the position directly as the server tells you.
-    //This is a common mistake and causes somewhat playable results on a local LAN, for example,
-    //but causes terrible lag when any ping/latency is introduced. The player can not deduce any
-    //information to interpolate with so it misses positions, and packet loss destroys this approach
-    //even more so. See 'the bouncing ball problem' on Wikipedia.
-    if(this.options.naive_approach) {
-        if(data.hp) {
-            player_host.pos = Vector.copy(data.hp);
-        }
-
-        if(data.cp) {
-            player_client.pos = Vector.copy(data.cp);
-        }
-    } else {
-        //Cache the data from the server,
-        //and then play the timeline
-        //back to the player with a small delay (net_offset), allowing
-        //interpolation between the points.
-        this.server_updates.push(data);
-
-        //we limit the buffer in seconds worth of updates
-        //60fps*buffer seconds = number of samples
-        if (this.server_updates.length >= ( 60 * this.options.buffer_size )) {
-            this.server_updates.splice(0, 1);
-        }
-
-        //We can see when the last tick we know of happened.
-        //If client_time gets behind this due to latency, a snap occurs
-        //to the last tick. Unavoidable, and a reallly bad connection here.
-        //If that happens it might be best to drop the game after a period of time.
-        this.oldest_tick = this.server_updates[0].t;
-
-        // Handle the latest positions from the server
-        // and make sure to correct our local predictions, making the server have final say.
-        this.client_process_net_prediction_correction(1000 / PHYSICS_FPS);
-    }
-};
-
 game_core.prototype.client_update_local_position = function (){
     if(this.options.client_predict) {
         //Then store the states for clarity,
@@ -519,8 +463,6 @@ game_core.prototype.client_onreadygame = function(data) {
     player_host.state = 'local_pos(hosting)';
     player_client.state = 'local_pos(joined)';
 
-    this.players.self.state = 'YOU ' + this.players.self.state;
-
     // Make sure colors are synced up
     this.socket.send('c.' + this.players.self.color);
 };
@@ -555,30 +497,10 @@ game_core.prototype.client_onhostgame = function(data) {
     this.client_reset_positions();
 };
 
-game_core.prototype.client_onconnected = function(data) {
-    // The server responded that we are now in a game,
-    // this lets us store the information about ourselves and set the colors
-    // to show we are now ready to be playing.
-    this.players.self.id = data.id;
-    this.players.self.info_color = '#cc0000';
-    this.players.self.state = 'connected';
-    this.players.self.online = true;
-};
-
 game_core.prototype.client_on_otherclientcolorchange = function(data) {
     this.players.other.color = data;
 };
 
-game_core.prototype.client_ondisconnect = function(data) {
-    // When we disconnect, we don't know if the other player is
-    // connected or not, and since we aren't, everything goes to offline
-    this.players.self.info_color = 'rgba(255,255,255,0.1)';
-    this.players.self.state = 'not-connected';
-    this.players.self.online = false;
-
-    this.players.other.info_color = 'rgba(255,255,255,0.1)';
-    this.players.other.state = 'not-connected';
-};
 
 class GameClient extends game_core {
     constructor (config) {
@@ -601,6 +523,18 @@ class GameClient extends game_core {
             this.client_update_physics(delta);
             this.local_time += delta / 1000;
         }).setDraw(updateView);
+    }
+
+    sendInput (input) {
+        // Send the packet of information to the server.
+        // The input packets are labelled with an 'i' in front.
+        let server_packet = 'i.';
+
+        server_packet += input.join('-') + '.';
+        server_packet += this.local_time.toFixed(3).replace('.', '-') + '.';
+        server_packet += this.input_seq;
+
+        this.socket.send(server_packet);
     }
 
     get netPing () {

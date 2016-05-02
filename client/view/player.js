@@ -1,8 +1,11 @@
 'use strict';
 
-function draw (ctx, player) {
+const COLOR = 'rgba(255,255,255,0.1)';
+const INFO_COLOR = 'rgba(255,255,255,0.1)';
+
+function draw (ctx, player, options = {}) {
     // Set the color for this player
-    ctx.fillStyle = player.color;
+    ctx.fillStyle = options.color || COLOR;
 
     // Draw a rectangle for us
     const x = player.pos.x - player.size.hx;
@@ -13,8 +16,13 @@ function draw (ctx, player) {
     ctx.fillRect(x, y, width, height);
 
     // Draw a status update
-    ctx.fillStyle = player.info_color;
-    ctx.fillText(player.state, player.pos.x + 10, player.pos.y + 4);
+    const infoColor = options.infoColor || INFO_COLOR;
+
+    ctx.fillStyle = infoColor;
+
+    const stateText = options.stateText || '';
+
+    ctx.fillText(stateText, player.pos.x + 10, player.pos.y + 4);
 }
 
 module.exports = draw;

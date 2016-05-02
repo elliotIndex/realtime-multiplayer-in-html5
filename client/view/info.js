@@ -5,7 +5,7 @@ function draw (ctx, game) {
     ctx.fillStyle = 'rgba(255,255,255,0.3)';
 
     // They can hide the help with the debug GUI
-    if (game.show_help) {
+    if (game.options.show_help) {
         ctx.fillText('net_offset : local offset of others players and their server updates. Players are net_offset "in the past" so we can smoothly draw them interpolated.', 10 , 30);
         ctx.fillText('server_time : last known game time on server', 10 , 70);
         ctx.fillText('client_time : delayed game time on client for other players only (includes the net_offset)', 10 , 90);
