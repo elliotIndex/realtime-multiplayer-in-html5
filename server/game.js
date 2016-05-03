@@ -64,11 +64,13 @@ class GameCore extends game_core {
             // Keep the physics position in the world
             this._collisionHandler.process(this.players.self);
             this._collisionHandler.process(this.players.other);
-
-            this.local_time += delta / 1000;
         });
 
         this._networkLoop = MainLoop.create().setSimulationTimestep(options.networkTimestep).setUpdate(updateNetwork);
+
+        this._timer = MainLoop.create().setSimulationTimestep(options.timerFrequency).setUpdate((delta) => {
+            this.local_time += delta / 1000;
+        });
     }
 
     /**
@@ -111,6 +113,7 @@ class GameCore extends game_core {
     }
 
     start () {
+        this._timer.start();
         this._physicsLoop.start();
         this._networkLoop.start();
     }
@@ -118,6 +121,7 @@ class GameCore extends game_core {
     stop () {
         this._physicsLoop.stop();
         this._networkLoop.stop();
+        this._timer.stop();
     }
 }
 

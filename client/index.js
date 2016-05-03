@@ -9,7 +9,7 @@ const gameConfig = require('../lib/game-config');
 
 window.onload = function () {
     // Create our game client instance.
-    const game = new GameClient(Object.assign({}, clientConfig, gameConfig));
+    const game = new GameClient(Object.assign({}, gameConfig, clientConfig));
 
     const canvas = {};
 

@@ -54,32 +54,29 @@ function create (config) {
     };
 
     gameServer.createGame = function(player) {
-
-        //Create a new game instance
-        var thegame = {
-            id : uuid(),                //generate a new id for the game
-            player_host:player,         //so we know who initiated the game
-            player_client:null,         //nobody else joined yet, since its new
-            player_count:1              //for simple checking of state
+        // Create a new game instance
+        const thegame = {
+            id: uuid(),                // generate a new id for the game
+            player_host: player,         // so we know who initiated the game
+            player_client: null,         // nobody else joined yet, since its new
+            player_count: 1              // for simple checking of state
         };
 
-        //Store it in the list of game
-        this.games[ thegame.id ] = thegame;
+        // Store it in the list of game
+        this.games[thegame.id] = thegame;
 
-        //Keep track
-        this.game_count++;
+        // Keep track
+        this.game_count += 1;
 
-        //Create a new game core instance, this actually runs the
-        //game code like collisions and such.
+        // Create a new game core instance, this actually runs the
+        // game code like collisions and such.
         thegame.gamecore = new GameCore(thegame, config);
-        //Start updating the game loop on the server
-        // thegame.gamecore.update( new Date().getTime() );
+        // Start updating the game loop on the server
         thegame.gamecore.start();
 
-        //tell the player that they are now the host
-        //s=server message, h=you are hosting
-
-        player.send('s.h.'+ String(thegame.gamecore.local_time).replace('.','-'));
+        // tell the player that they are now the host
+        // s=server message, h=you are hosting
+        player.send('s.h.' + String(thegame.gamecore.local_time).replace('.', '-'));
         console.log('server host at  ' + thegame.gamecore.local_time);
         player.game = thegame;
         player.hosting = true;
@@ -88,8 +85,9 @@ function create (config) {
 
         return thegame;
     };
+
     // we are requesting to kill a game in progress.
-    gameServer.endGame = function(gameId, userid) {
+    gameServer.endGame = function (gameId, userid) {
         const thegame = this.games[gameId];
 
         if (thegame) {

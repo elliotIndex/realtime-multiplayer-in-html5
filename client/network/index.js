@@ -1,7 +1,7 @@
 'use strict';
 
 const SocketClient = require('socket.io-client');
-const NetworkGameEvents = require('./network-game-events');
+const NetworkGameEvents = require('./game-events');
 
 function network () {
     let socket = null;

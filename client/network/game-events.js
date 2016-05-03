@@ -1,6 +1,7 @@
 'use strict';
 
-const Vector = require('../lib/vector');
+const clientPrediction = require('./client-prediction');
+const Vector = require('../../lib/vector');
 
 function networkClientEvents (game, socket) {
     function onHostGame (data) {
@@ -123,7 +124,16 @@ function networkGameEvents (game, socket) {
 
             // Handle the latest positions from the server
             // and make sure to correct our local predictions, making the server have final say.
-            game.client_process_net_prediction_correction();
+            if (game.server_updates.length > 0) {
+                clientPrediction(game);
+
+                const delta = game.options.simulationTimestemp;
+
+                // Now we reapply all the inputs that we have locally that
+                // the server hasn't yet confirmed. This will 'keep' our position the same,
+                // but also confirm the server position at the same time.
+                game.updatePhysics(delta);
+            }
         }
     }
 
