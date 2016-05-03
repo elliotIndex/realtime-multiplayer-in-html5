@@ -22,12 +22,10 @@ function debugView (game) {
 
     othersettings.add(game.options, 'naive_approach').listen();
     othersettings.add(game.options, 'client_smoothing').listen();
-    othersettings.add(game.options, 'client_smooth').listen();
     othersettings.add(game.options, 'client_predict').listen();
 
     const debugsettings = gui.addFolder('Debug view');
 
-    debugsettings.add(game.options, 'show_help').listen();
     debugsettings.add(game.options, 'show_server_pos').listen();
     debugsettings.add(game.options, 'show_dest_pos').listen();
     debugsettings.add(game, 'local_time').listen();

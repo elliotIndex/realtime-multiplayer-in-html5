@@ -6,46 +6,20 @@ const Vector = require('../lib/vector');
 const CollisionHandler = require('../lib/collision');
 const processInput = require('../lib/physics/process-input');
 
-function game_core (game_instance) {
-    // Store the instance, if any
-    this.instance = game_instance;
-
-    // A local timer for precision on server
-    this.local_time = 0;
-}
-
-// Simulates the world state
-game_core.prototype.server_update_physics = function (delta) {
-    // Handle player one
-    this.players.self.old_state.pos = Vector.copy(this.players.self.pos);
-
-    const new_dir = processInput(this.players.self, delta);
-
-    this.players.self.pos = Vector.add(this.players.self.old_state.pos, new_dir);
-
-    // Handle player two
-    this.players.other.old_state.pos = Vector.copy(this.players.other.pos);
-
-    const other_new_dir = processInput(this.players.other, delta);
-
-    this.players.other.pos = Vector.add(this.players.other.old_state.pos, other_new_dir);
-
-    this.players.self.inputs = []; // we have cleared the input buffer, so remove this
-    this.players.other.inputs = []; // we have cleared the input buffer, so remove this
-};
-
-class GameCore extends game_core {
+class GameCore {
     constructor (gameInstance, options) {
-        super(gameInstance, options);
         this.options = options;
+
+        // A local timer for precision on server
+        this.local_time = 0;
 
         this._collisionHandler = CollisionHandler(options.world);
 
         // We create a player set, passing them
         // the game that is running them, as well
         this.players = {
-            self: new Player(this, this.instance.player_host),
-            other: new Player(this, this.instance.player_client)
+            self: new Player(this, gameInstance.player_host),
+            other: new Player(this, gameInstance.player_client)
         };
 
         this.players.self.pos = Vector.copy(options.playerPositions[0]);
@@ -59,7 +33,7 @@ class GameCore extends game_core {
         };
 
         this._physicsLoop = MainLoop.create().setSimulationTimestep(options.simulationTimestemp).setUpdate((delta) => {
-            this.server_update_physics(delta);
+            this.updatePhysics(delta);
 
             // Keep the physics position in the world
             this._collisionHandler.process(this.players.self);
@@ -102,7 +76,7 @@ class GameCore extends game_core {
      */
     receiveClientInput (client, input, inputTime, inputSeq) {
         // Fetch which client this refers to out of the two
-        const clientPlayer = client.userid === this.players.self.instance.userid ? this.players.self : this.players.other;
+        const clientPlayer = client.id === this.players.self.instance.id ? this.players.self : this.players.other;
 
         // Store the input on the player instance for processing in the physics loop
         clientPlayer.inputs.push({
@@ -122,6 +96,25 @@ class GameCore extends game_core {
         this._physicsLoop.stop();
         this._networkLoop.stop();
         this._timer.stop();
+    }
+
+    updatePhysics (delta) {
+        // Handle player one
+        this.players.self.old_state.pos = Vector.copy(this.players.self.pos);
+
+        const new_dir = processInput(this.players.self, delta);
+
+        this.players.self.pos = Vector.add(this.players.self.old_state.pos, new_dir);
+
+        // Handle player two
+        this.players.other.old_state.pos = Vector.copy(this.players.other.pos);
+
+        const other_new_dir = processInput(this.players.other, delta);
+
+        this.players.other.pos = Vector.add(this.players.other.old_state.pos, other_new_dir);
+
+        this.players.self.inputs = []; // we have cleared the input buffer, so remove this
+        this.players.other.inputs = []; // we have cleared the input buffer, so remove this
     }
 }
 
