@@ -1,43 +1,35 @@
 'use strict';
 
 const MainLoop = require('../lib/mainloop');
-const Player = require('../lib/Player');
 const Vector = require('../lib/vector');
 const CollisionHandler = require('../lib/collision');
 const processInput = require('../lib/physics/process-input');
 
 class GameCore {
-    constructor (gameInstance, options) {
+    constructor (options) {
         this.options = options;
+        this.network = null;
 
         // A local timer for precision on server
         this.local_time = 0;
 
         this._collisionHandler = CollisionHandler(options.world);
 
-        // We create a player set, passing them
-        // the game that is running them, as well
-        this.players = {
-            self: new Player(this, gameInstance.player_host),
-            other: new Player(this, gameInstance.player_client)
-        };
-
-        this.players.self.pos = Vector.copy(options.playerPositions[0]);
-        this.players.other.pos = Vector.copy(options.playerPositions[1]);
-
-        this.players.self.speed = options.playerSpeed;
-        this.players.other.speed = options.playerSpeed;
+        this.players = new Set();
 
         const updateNetwork = () => {
-            this.sendUpdates();
+            if (this.network) {
+                this.network.sendUpdates(this);
+            }
         };
 
         this._physicsLoop = MainLoop.create().setSimulationTimestep(options.simulationTimestemp).setUpdate((delta) => {
             this.updatePhysics(delta);
 
             // Keep the physics position in the world
-            this._collisionHandler.process(this.players.self);
-            this._collisionHandler.process(this.players.other);
+            for (const player of this.players) {
+                this._collisionHandler.process(player);
+            }
         });
 
         this._networkLoop = MainLoop.create().setSimulationTimestep(options.networkTimestep).setUpdate(updateNetwork);
@@ -47,43 +39,20 @@ class GameCore {
         });
     }
 
-    /**
-     * Send updates to clients.
-     */
-    sendUpdates () {
-        // Make a snapshot of the current state, for updating the clients
-        const state = {
-            hp: this.players.self.pos,               // 'host position', the game creators position
-            cp: this.players.other.pos,              // 'client position', the person that joined, their position
-            his: this.players.self.last_input_seq,    // 'host input sequence', the last input we processed for the host
-            cis: this.players.other.last_input_seq,   // 'client input sequence', the last input we processed for the client
-            t: this.local_time                      // our current local time on the server
-        };
-
-        // Send the snapshot to the 'host' player
-        if (this.players.self.instance) {
-            this.players.self.instance.emit('onserverupdate', state);
+    addPlayer (player) {
+        if (this.players.size === 0) {
+            player.pos = Vector.copy(this.options.playerPositions[0]);
+        } else {
+            player.pos = Vector.copy(this.options.playerPositions[1]);
         }
 
-        // Send the snapshot to the 'client' player
-        if (this.players.other.instance) {
-            this.players.other.instance.emit('onserverupdate', state);
-        }
+        player.speed = this.options.playerSpeed;
+
+        this.players.add(player);
     }
 
-    /**
-     * Receive input from clients.
-     */
-    receiveClientInput (client, input, inputTime, inputSeq) {
-        // Fetch which client this refers to out of the two
-        const clientPlayer = client.id === this.players.self.instance.id ? this.players.self : this.players.other;
-
-        // Store the input on the player instance for processing in the physics loop
-        clientPlayer.inputs.push({
-            inputs: input,
-            time: inputTime,
-            seq: inputSeq
-        });
+    removePlayer (player) {
+        this.players.remove(player);
     }
 
     start () {
@@ -99,22 +68,16 @@ class GameCore {
     }
 
     updatePhysics (delta) {
-        // Handle player one
-        this.players.self.old_state.pos = Vector.copy(this.players.self.pos);
+        for (const player of this.players) {
+            player.old_state.pos = Vector.copy(player.pos);
 
-        const new_dir = processInput(this.players.self, delta);
+            const newDir = processInput(player, delta);
 
-        this.players.self.pos = Vector.add(this.players.self.old_state.pos, new_dir);
+            player.pos = Vector.add(player.old_state.pos, newDir);
 
-        // Handle player two
-        this.players.other.old_state.pos = Vector.copy(this.players.other.pos);
-
-        const other_new_dir = processInput(this.players.other, delta);
-
-        this.players.other.pos = Vector.add(this.players.other.old_state.pos, other_new_dir);
-
-        this.players.self.inputs = []; // we have cleared the input buffer, so remove this
-        this.players.other.inputs = []; // we have cleared the input buffer, so remove this
+            // we have cleared the input buffer, so remove this
+            player.inputs = [];
+        }
     }
 }
 

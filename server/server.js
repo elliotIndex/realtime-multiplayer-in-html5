@@ -2,7 +2,6 @@
 
 const GameCore = require('./game');
 const Room = require('./Room');
-const uuid = require('node-uuid');
 
 const debug = require('debug');
 const log = debug('game:server/server');
@@ -24,8 +23,8 @@ function create (config) {
 
         // the client should be in a game, so
         // we can tell that game to handle the input
-        if (client && client.currentRoom && client.currentRoom.game) {
-            client.currentRoom.game.receiveClientInput(client, input_commands, input_time, input_seq);
+        if (client && client.currentRoom && client.currentRoom.gameStarted) {
+            client.currentRoom.receiveClientInput(client, input_commands, input_time, input_seq);
         }
     }
 
@@ -34,17 +33,16 @@ function create (config) {
         // The first is always the type of message
         const message_type = message_parts[0];
 
-        const other_client = (client.currentRoom.player_host.id === client.id) ?
-            client.currentRoom.player_client : client.currentRoom.player_host;
-
         if (message_type === 'i') {
             // Input handler will forward this
             onInput(client, message_parts);
         } else if (message_type === 'p') {
             client.send('s.p.' + message_parts[1]);
         } else if (message_type === 'c') {    // Client changed their color!
-            if (other_client) {
-                other_client.send('s.c.' + message_parts[1]);
+            for (const roomClient of client.currentRoom.clients) {
+                if (roomClient !== client) {
+                    roomClient.send('s.c.' + message_parts[1]);
+                }
             }
         }
     }
@@ -54,9 +52,7 @@ function create (config) {
 
         rooms.set(room.id, room);
 
-        // Create a new game core instance, this actually runs the
-        // game code like collisions and such.
-        room.game = new GameCore(room, config);
+        room.setGame(new GameCore(config));
 
         // Start updating the game loop on the server
         room.game.start();
@@ -115,22 +111,25 @@ function create (config) {
             if (room.size > 1) {
                 // send the players the message the game is ending
                 if (client === room.host) {
-                    // the host left. Lets try join another game
+                    // the host left. Other players try to join another game
+                    for (const otherClient of room.clients) {
+                        if (client !== otherClient) {
+                            otherClient.send('s.e');
 
-                    if (room.player_client) {
-                        // tell them the game is over
-                        room.send('s.e', [client]);
-
-                        // now look for/create a new game.
-                        findGame(room.player_client);
+                            // now look for/create a new game.
+                            findGame(otherClient);
+                        }
                     }
                 } else if (room.host) {
-                    // the other player left, we were hosting
-                    // tell the client the game is ended
-                    room.host.send('s.e');
+                    // Host is leaving, let all other players leave too
+                    for (const client of room.clients) {
+                        client.send('s.e');
 
-                    // now look for/create a new game.
-                    findGame(room.host);
+                        room.host.send('s.e');
+
+                        // now look for/create a new game.
+                        findGame(client);
+                    }
                 }
             }
 

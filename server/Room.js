@@ -1,6 +1,8 @@
 'use strict';
 
 const uuid = require('node-uuid');
+const GameNetwork = require('./network');
+const Player = require('../lib/Player');
 
 class Room {
     constructor (host) {
@@ -13,7 +15,16 @@ class Room {
 
         this.game = null;
 
+        this.network = GameNetwork();
+
         this.player_host = host;
+        this.gameStarted = false;
+    }
+
+    setGame (game) {
+        this.game = game;
+        game.network = this.network;
+        this.network.addClientPlayer(this.host, this.game.players.self);
     }
 
     send (message, excludeClients = []) {
@@ -24,15 +35,21 @@ class Room {
         }
     }
 
+    receiveClientInput (...args) {
+        if (this.network) {
+            this.network.receiveClientInput(...args);
+        }
+    }
+
     join (client) {
         this.clients.add(client);
         client.currentRoom = this;
 
-        this.player_client = client;
-        this.game.players.other.instance = client;
+        this.network.addClientPlayer(client, this.game.players.other);
     }
 
     leave (client) {
+        this.network.removeClientPlayer(client);
         this.clients.delete(client);
         client.currentRoom = null;
     }
@@ -42,26 +59,28 @@ class Room {
     }
 
     startGame () {
-        // right so a game has 2 players and wants to begin
-        // the host already knows they are hosting,
-        // tell the other client they are joining a game
-        // s=server message, j=you are joining, send them the host id
-        this.player_client.send('s.j.' + this.player_host.id);
-        this.player_client.game = this.game;
+        for (const client of this.clients) {
+            const player = new Player();
 
-        // now we tell both that the this.game is ready to start
-        // clients will reset their positions in this case.
-        this.player_client.send('s.r.' + this.game.local_time.toString().replace('.', '-'));
-        this.player_host.send('s.r.' + this.game.local_time.toString().replace('.', '-'));
+            this.game.addPlayer(player);
+            this.network.addClientPlayer(client, player);
 
-        // set this flag, so that the update loop can run it.
-        this.game.active = true;
+            if (client !== this.host) {
+                client.send('s.j');
+            }
+
+            client.send('s.r.' + this.game.local_time.toString().replace('.', '-'));
+        }
+
+        this.gameStarted = true;
     }
 
     endGame () {
         if (this.game) {
             this.game.stop();
             this.game = null;
+            this.network = null;
+            this.gameStarted = false;
         }
     }
 }
