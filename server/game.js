@@ -40,11 +40,7 @@ class GameCore {
     }
 
     addPlayer (player) {
-        if (this.players.size === 0) {
-            player.pos = Vector.copy(this.options.playerPositions[0]);
-        } else {
-            player.pos = Vector.copy(this.options.playerPositions[1]);
-        }
+        player.pos = Vector.copy(this.options.playerPositions[0]);
 
         player.speed = this.options.playerSpeed;
 

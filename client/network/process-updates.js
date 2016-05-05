@@ -29,7 +29,7 @@ function processNetworkUpdates (game, interpolation) {
         const next_point = game.server_updates[i + 1];
 
         // Compare our point in time with the server times we have
-        if (current_time > point.t && current_time < next_point.t) {
+        if (current_time > point.serverTime && current_time < next_point.serverTime) {
             target = next_point;
             previous = point;
             break;
@@ -49,10 +49,10 @@ function processNetworkUpdates (game, interpolation) {
     // lerp requires the 0,1 value to lerp to? thats the one.
 
     if (target && previous) {
-        game.target_time = target.t;
+        game.target_time = target.serverTime;
 
         const difference = game.target_time - current_time;
-        const max_difference = fixedNumber(target.t - previous.t, 3);
+        const max_difference = fixedNumber(target.serverTime - previous.serverTime, 3);
         let timePoint = fixedNumber(difference / max_difference, 3);
 
         // Because we use the same target and previous in extreme cases
@@ -64,43 +64,63 @@ function processNetworkUpdates (game, interpolation) {
         // The most recent server update
         const latest_server_data = game.server_updates[game.server_updates.length - 1];
 
-        // These are the exact server positions from this tick, but only for the ghost
-        const other_server_pos = game.players.self.host ? latest_server_data.cp : latest_server_data.hp;
+        for (let i = 0; i < latest_server_data.players.length; i++) {
+            const playerData = latest_server_data.players[i];
 
-        // The other players positions in this timeline, behind us and in front of us
-        const other_target_pos = game.players.self.host ? target.cp : target.hp;
-        const other_past_pos = game.players.self.host ? previous.cp : previous.hp;
+            // These are the exact server positions from this tick, but only for the ghost
+            const other_server_pos = playerData.position;
 
-        // update the dest block, this is a simple lerp
-        // to the target from the previous point in the server_updates buffer
-        game.ghosts.server_pos_other.pos = Vector.copy(other_server_pos);
-        game.ghosts.pos_other.pos = Vector.lerp(other_past_pos, other_target_pos, timePoint);
+            // The other players positions in this timeline, behind us and in front of us
+            if (!target.players[i] || !previous.players[i]) {
+                continue;
+            }
 
-        if (game.options.client_smoothing) {
-            game.players.other.pos = Vector.lerp(game.players.other.pos, game.ghosts.pos_other.pos, interpolation);
-        } else {
-            game.players.other.pos = Vector.copy(game.ghosts.pos_other.pos);
+            const other_target_pos = target.players[i].position;
+            const other_past_pos = previous.players[i].position;
+
+            const ghosts = game.getGhosts(playerData.id);
+            const player = game.getPlayerById(playerData.id);
+
+            if (!player) {
+                continue;
+            }
+
+            // update the dest block, this is a simple lerp
+            // to the target from the previous point in the server_updates buffer
+            ghosts.server.position = Vector.copy(other_server_pos);
+            ghosts.local.position = Vector.lerp(other_past_pos, other_target_pos, timePoint);
+
+            if (game.options.client_smoothing) {
+                player.pos = Vector.lerp(player.pos, ghosts.local.position, interpolation);
+            } else {
+                player.pos = Vector.copy(ghosts.local.position);
+            }
         }
 
         // Now, if not predicting client movement , we will maintain the local player position
         // using the same method, smoothing the players information from the past.
         if (!game.options.client_predict && !game.options.naive_approach) {
             // These are the exact server positions from this tick, but only for the ghost
-            const my_server_pos = game.players.self.host ? latest_server_data.hp : latest_server_data.cp;
+            const localPlayer = game.getPlayerById(latest_server_data.ownPlayer.id);
+
+            const my_server_pos = latest_server_data.ownPlayer.position;
 
             // The other players positions in this timeline, behind us and in front of us
-            const my_target_pos = game.players.self.host ? target.hp : target.cp;
-            const my_past_pos = game.players.self.host ? previous.hp : previous.cp;
+            const my_target_pos = target.ownPlayer.position;
+            const my_past_pos = previous.ownPlayer.position;
+
+            const ghosts = game.getGhosts(localPlayer.id);
 
             // Snap the ghost to the new server position
-            game.ghosts.server_pos_self.pos = Vector.copy(my_server_pos);
+            ghosts.server.position = Vector.copy(my_server_pos);
+
             const local_target = Vector.lerp(my_past_pos, my_target_pos, timePoint);
 
             // Smoothly follow the destination position
             if (game.options.client_smoothing) {
-                game.players.self.pos = Vector.lerp(game.players.self.pos, local_target, interpolation);
+                localPlayer.pos = Vector.lerp(localPlayer.pos, local_target, interpolation);
             } else {
-                game.players.self.pos = Vector.copy(local_target);
+                localPlayer.pos = Vector.copy(local_target);
             }
         }
     }

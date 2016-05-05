@@ -6,6 +6,7 @@ const debugView = require('./view/debug');
 const DEBUG = true;
 const clientConfig = require('./client-config');
 const gameConfig = require('../lib/game-config');
+const Player = require('../lib/Player');
 
 window.onload = function () {
     // Create our game client instance.
@@ -33,5 +34,11 @@ window.onload = function () {
     }
 
     // Finally, start the loop
+
+    const localPlayer = new Player('local');
+
+    game.addPlayer(localPlayer);
+    game.setLocalPlayer(localPlayer);
+
     game.start(renderer);
 };

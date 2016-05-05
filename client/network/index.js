@@ -35,6 +35,8 @@ function network () {
         // Handle when we connect to the server, showing state and storing id's.
         socket.on('onconnected', gameEvents.onConnected);
 
+        socket.on('startGame', gameEvents.onStartGame);
+
         // On error we just show that we are not connected for now. Can print the data.
         socket.on('error', gameEvents.onDisconnect);
 

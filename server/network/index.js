@@ -22,16 +22,17 @@ function network () {
 
         if (players.length > 1) {
             const state = {
-                hp: players[0].pos,               // 'host position', the game creators position
-                cp: players[1].pos,              // 'client position', the person that joined, their position
-                his: players[0].last_input_seq,    // 'host input sequence', the last input we processed for the host
-                cis: players[1].last_input_seq,   // 'client input sequence', the last input we processed for the client
-                t: game.local_time                      // our current local time on the server
+                serverTime: game.local_time
             };
 
             // Send the snapshot to the 'host' player
             for (const player of game.players) {
                 if (playerClients.has(player)) {
+                    state.ownPlayer = player.toJSON();
+                    state.players = Array.from(game.players.values()).filter(p => {
+                        return p !== player;
+                    });
+
                     playerClients.get(player).emit('onserverupdate', state);
                 }
             }
@@ -50,6 +51,12 @@ function network () {
     }
 
     return {
+        getPlayerByClient (client) {
+            return clientPlayers.get(client);
+        },
+        getClientByPlayer (player) {
+            return playerClients.get(player);
+        },
         addClientPlayer,
         removeClientPlayer,
         sendUpdates,

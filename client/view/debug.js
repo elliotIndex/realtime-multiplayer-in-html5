@@ -6,12 +6,12 @@ function debugView (game) {
     const gui = new dat.GUI();
     const playersettings = gui.addFolder('Your settings');
 
-    game.colorcontrol = playersettings.addColor(game.players.self, 'color');
+    game.colorcontrol = playersettings.addColor(game, 'localPlayerColor');
 
     // We want to know when we change our color so we can tell
     // the server to tell the other clients for us
     game.colorcontrol.onChange((value) => {
-        game.players.self.color = value;
+        game.localPlayerColor = value;
         localStorage.setItem('color', value);
         game._network.send('c.' + value); // FIXME Not very nice
     });

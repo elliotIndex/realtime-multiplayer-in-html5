@@ -8,11 +8,11 @@ function draw (ctx, player, options = {}) {
     ctx.fillStyle = options.color || COLOR;
 
     // Draw a rectangle for us
-    const x = player.pos.x - player.size.hx;
-    const y = player.pos.y - player.size.hy;
+    const x = player.position.x - (player.height / 2);
+    const y = player.position.y - (player.height / 2);
 
-    const width = player.size.x;
-    const height = player.size.y;
+    const width = player.width;
+    const height = player.height;
 
     ctx.fillRect(x, y, width, height);
 
@@ -23,7 +23,7 @@ function draw (ctx, player, options = {}) {
 
     const stateText = options.stateText || '';
 
-    ctx.fillText(stateText, player.pos.x + (player.size.x / 1.5), player.pos.y + (player.size.y / 4));
+    ctx.fillText(stateText, player.position.x + (width / 1.5), player.position.y + (height / 4));
 }
 
 module.exports = draw;

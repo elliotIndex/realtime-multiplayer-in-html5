@@ -3,6 +3,8 @@
 const uuid = require('node-uuid');
 const GameNetwork = require('./network');
 const Player = require('../lib/Player');
+const debug = require('debug');
+const log = debug('game:server/Room');
 
 class Room {
     constructor (host) {
@@ -27,11 +29,15 @@ class Room {
         this.network.addClientPlayer(this.host, this.game.players.self);
     }
 
-    send (message, excludeClients = []) {
+    send (message) {
         for (const client of this.clients) {
-            if (!excludeClients.includes(client)) {
-                client.send(message);
-            }
+            client.send(message);
+        }
+    }
+
+    emit (event, data) {
+        for (const client of this.clients) {
+            client.emit(event, data);
         }
     }
 
@@ -44,8 +50,6 @@ class Room {
     join (client) {
         this.clients.add(client);
         client.currentRoom = this;
-
-        this.network.addClientPlayer(client, this.game.players.other);
     }
 
     leave (client) {
@@ -60,7 +64,7 @@ class Room {
 
     startGame () {
         for (const client of this.clients) {
-            const player = new Player();
+            const player = new Player(uuid.v4());
 
             this.game.addPlayer(player);
             this.network.addClientPlayer(client, player);
@@ -68,9 +72,22 @@ class Room {
             if (client !== this.host) {
                 client.send('s.j');
             }
-
-            client.send('s.r.' + this.game.local_time.toString().replace('.', '-'));
         }
+
+        for (const client of this.clients) {
+            const state = {
+                serverTime: this.game.local_time,
+                players: Array.from(this.game.players).filter(player => {
+                    return this.network.getPlayerByClient(client) !== player;
+                }).map(player => player.toJSON()),
+                    ownPlayer: this.network.getPlayerByClient(client).toJSON()
+            };
+
+            log('starting game state', JSON.stringify(state, null, 4));
+
+            client.emit('startGame', state);
+        }
+
 
         this.gameStarted = true;
     }

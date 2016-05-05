@@ -11,30 +11,9 @@ const processInput = require('../lib/physics/process-input');
 const processNetworkUpdates = require('./network/process-updates');
 
 function game_core (options) {
-    // We create a player set, passing them
-    // the game that is running them, as well
-    this.players = {
-        self: new Player(this),
-        other: new Player(this)
-    };
-
-    // Debugging ghosts, to help visualise things
-    this.ghosts = {
-        // Our ghost position on the server
-        server_pos_self: new Player(this),
-        // The other players server position as we receive it
-        server_pos_other: new Player(this),
-        // The other players ghost destination position (the lerp)
-        pos_other: new Player(this)
-    };
-
-    this.ghosts.server_pos_self.pos = Vector.copy(options.playerPositions[0]);
-    this.ghosts.pos_other.pos = Vector.copy(options.playerPositions[1]);
-    this.ghosts.server_pos_other.pos = Vector.copy(options.playerPositions[1]);
-
-    // The speed at which the clients move.
-    this.players.self.speed = options.playerSpeed;
-    this.players.other.speed = options.playerSpeed;
+    this.players = new Map();
+    this.serverGhosts = new Map();
+    this.localGhosts = new Map();
 
     // A local timer for precision on client
     this.local_time = 0;
@@ -50,45 +29,28 @@ function game_core (options) {
     // A list of recent server updates we interpolate across
     // This is the buffer that is the driving factor for our networking
     this.server_updates = [];
-
-    this.players.self.color = '#cc8822';
 }
-
-game_core.prototype.client_reset_positions = function() {
-    const player_host = this.players.self.host ? this.players.self : this.players.other;
-    const player_client = this.players.self.host ? this.players.other : this.players.self;
-
-    // Host always spawns at the top left.
-    player_host.pos = Vector.copy(this.options.playerPositions[0]);
-    player_client.pos = Vector.copy(this.options.playerPositions[1]);
-
-    // Make sure the local player physics is updated
-    this.players.self.old_state.pos = Vector.copy(this.players.self.pos);
-    this.players.self.pos = Vector.copy(this.players.self.pos);
-    this.players.self.cur_state.pos = Vector.copy(this.players.self.pos);
-
-    // Position all debug view items to their owners position
-    this.ghosts.server_pos_self.pos = Vector.copy(this.players.self.pos);
-
-    this.ghosts.server_pos_other.pos = Vector.copy(this.players.other.pos);
-    this.ghosts.pos_other.pos = Vector.copy(this.players.other.pos);
-};
 
 class GameClient extends game_core {
     constructor (options) {
         super(options);
+        this.localPlayerColor = '#cc8822';
         this.options = Object.assign({}, options);
         this._renderer = null;
         this._network = Network().connect(options.serverUrl);
         this._inputHandler = InputHandler();
         this._collisionHandler = CollisionHandler(options.world);
 
+        this.localPlayer = null;
+
         const updateLogic = (delta) => {
             this._updateInput();
 
             this.updatePhysics(delta);
 
-            this._collisionHandler.process(this.players.self);
+            if (this.localPlayer) {
+                this._collisionHandler.process(this.localPlayer);
+            }
 
             this.local_time += delta / 1000;
         };
@@ -114,22 +76,25 @@ class GameClient extends game_core {
         });
     }
 
+
     updatePhysics (delta) {
         // Fetch the new direction from the input buffer,
         // and apply it to the state so we can smooth it in the visual state
         if (this.options.client_predict) {
-            this.players.self.old_state.pos = Vector.copy(this.players.self.cur_state.pos);
+            if (this.localPlayer) {
+                const player = this.localPlayer;
 
-            const nd = processInput(this.players.self, delta);
+                player.old_state.pos = Vector.copy(player.cur_state.pos)
 
-            this.players.self.cur_state.pos = Vector.add(this.players.self.old_state.pos, nd);
-            this.players.self.state_time = this.local_time;
+                const newDir = processInput(player, delta);
 
-            // When we are doing client side prediction, we smooth out our position
-            // across frames using local input states we have stored.
+                player.cur_state.pos = Vector.add(player.old_state.pos, newDir);
 
-            // Make sure the visual position matches the states we have stored
-            this.players.self.pos = this.players.self.cur_state.pos;
+                // When we are doing client side prediction, we smooth out our position
+                // across frames using local input states we have stored.
+                // Make sure the visual position matches the states we have stored
+                player.pos = player.cur_state.pos;
+            }
         }
     }
 
@@ -141,7 +106,7 @@ class GameClient extends game_core {
             this.input_seq += 1;
 
             // Store the input state as a snapshot of what happened.
-            this.players.self.inputs.push({
+            this.localPlayer.inputs.push({
                 inputs: input,
                 time: fixedNumber(this.local_time, 3),
                 seq: this.input_seq
@@ -165,6 +130,51 @@ class GameClient extends game_core {
 
     get netLatency () {
         return this._network.netLatency;
+    }
+
+    setLocalPlayer (player) {
+        this.localPlayer = player;
+    }
+
+    addPlayer (player) {
+        player.speed = this.options.playerSpeed;
+
+        this.players.set(player.id, player);
+
+        player.old_state.pos = Vector.copy(player.pos);
+        player.cur_state.pos = Vector.copy(player.pos);
+
+        this.serverGhosts.set(player.id, {
+            position: Vector.copy(player.pos),
+            speed: player.speed
+        });
+        this.localGhosts.set(player.id, {
+            position: Vector.copy(player.pos),
+            speed: player.speed
+        });
+    }
+
+    removePlayer (playerId) {
+        this.players.delete(playerId);
+        this.localGhosts.delete(playerId);
+        this.serverGhosts.delete(playerId);
+    }
+
+    getPlayerById (id) {
+        return this.players.get(id);
+    }
+
+    getGhosts (playerId) {
+        return {
+            server: this.serverGhosts.get(playerId),
+            local: this.localGhosts.get(playerId)
+        };
+    }
+
+    clearPlayers () {
+        this.players.clear();
+        this.serverGhosts.clear();
+        this.localGhosts.clear();
     }
 
     start (renderer) {

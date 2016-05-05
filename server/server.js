@@ -41,7 +41,8 @@ function create (config) {
         } else if (message_type === 'c') {    // Client changed their color!
             for (const roomClient of client.currentRoom.clients) {
                 if (roomClient !== client) {
-                    roomClient.send('s.c.' + message_parts[1]);
+                    roomClient.send('s.c.' + message_parts[1] + '_'
+                                    + roomClient.currentRoom.network.getPlayerByClient(client).id);
                 }
             }
         }
@@ -76,7 +77,7 @@ function create (config) {
             // Check the list of rooms for an open game
             for (const room of rooms.values()) {
                 // If the room is a player short
-                if (room.size < 2) {
+                if (room.size < 3) {
                     // someone wants us to join!
                     joined_a_game = true;
 
@@ -85,7 +86,9 @@ function create (config) {
                     room.join(client);
 
                     // start running the game on the server
-                    startGame(room);
+                    if (room.size === 3) {
+                        startGame(room);
+                    }
                 }
             }
 
