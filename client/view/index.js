@@ -8,11 +8,10 @@ function renderer (ctx, options = {}) {
 
         for (const player of game.players.values()) {
             drawPlayer(ctx, player, {
-                color: player === game.localPlayer ? game.localPlayerColor : player.color,
-                infoColor: player.info_color,
-                stateText: (player === game.localPlayer ? 'YOU ' : '') + player.state
+                color: '#c58242',
+                infoColor: '#cc8822',
+                stateText: (player === game.localPlayer ? 'YOU ' : '') + 'local_pos'
             });
-
 
             const ghosts = game.getGhosts(player.id);
 

@@ -4,55 +4,9 @@ const clientPrediction = require('./client-prediction');
 const Player = require('../../lib/Player');
 const Vector = require('../../lib/vector');
 
-function networkClientEvents (game, socket) {
-    function onHostGame (data) {
-        // The server sends the time when asking us to host, but it should be a new game.
-        // so the value will be really small anyway (15 or 16ms)
-        const serverTime = Number.parseFloat(data.replace('-', '.'));
-
-        // Get an estimate of the current time on the server
-        game.local_time = serverTime + game.net_latency;
-
-        // Set the flag that we are hosting, this helps us position respawns correctly
-        game.localPlayer.host = true;
-
-        // Update debugging information to display state
-        game.localPlayer.state = 'hosting.waiting for a player';
-        game.localPlayer.info_color = '#cc0000';
-    }
-
-    function onJoinGame () {
-        // We are not the host
-        game.localPlayer.host = false;
-        // Update the local state
-        game.localPlayer.state = 'connected.joined.waiting';
-        game.localPlayer.info_color = '#00bb00';
-    }
-
-    function onColorChange (data) {
-        const split = data.split('_');
-        const color = split[0];
-        const playerId = split[1];
-
-        const player = game.getPlayerById(playerId);
-
-        if (player) {
-            player.color = color;
-        }
-    }
-
-    return {
-        onHostGame,
-        onJoinGame,
-        onColorChange
-    };
-}
-
-function networkGameEvents (game, socket) {
-    const clientEvents = networkClientEvents(game, socket);
-
+function networkGameEvents (game) {
     function onConnect () {
-        game.localPlayer.state = 'connecting';
+        console.log('trying to connect');
     }
 
     function onStartGame (data) {
@@ -69,34 +23,32 @@ function networkGameEvents (game, socket) {
 
             player.pos = Vector.copy(playerData.position);
 
-            player.info_color = '#cc8822';
-            player.state = 'local_pos(joined)';
-
             game.addPlayer(player);
         }
 
         const localPlayer = new Player(data.ownPlayer.id);
 
-        localPlayer.color = '#cc8822';
-        localPlayer.info_color = '#2288cc';
-        localPlayer.state = 'local_pos(hosting)'; // FIXME label not correct
         localPlayer.pos = Vector.copy(data.ownPlayer.position);
 
         game.addPlayer(localPlayer);
         game.setLocalPlayer(localPlayer);
-
-        // Make sure colors are synced up
-        socket.send('c.' + game.localPlayer.color);
     }
 
-    function onConnected (data) {
-        // The server responded that we are now in a game,
-        // this lets us store the information about ourselves and set the colors
-        // to show we are now ready to be playing.
-        game.localPlayer.id = data.id;
-        game.localPlayer.info_color = '#cc0000';
-        game.localPlayer.state = 'connected';
-        game.localPlayer.online = true;
+    function onConnected () {
+        console.log('connected');
+    }
+
+    function onPlayerJoined (playerData) {
+        const player = new Player(playerData.id);
+
+        player.pos = Vector.copy(playerData.position);
+
+        game.addPlayer(player);
+    }
+
+    function onPlayerLeft (playerId) {
+        game.removePlayer(playerId);
+        console.log('player left with id', playerId);
     }
 
     function onServerUpdate (data) {
@@ -148,12 +100,6 @@ function networkGameEvents (game, socket) {
     }
 
     function onDisconnect () {
-        // When we disconnect, we don't know if the other player is
-        // connected or not, and since we aren't, everything goes to offline
-        game.localPlayer.info_color = 'rgba(255,255,255,0.1)';
-        game.localPlayer.state = 'not-connected';
-        game.localPlayer.online = false;
-
         for (const player of game.players.values()) {
             if (player !== game.localPlayer) {
                 game.removePlayer(player.id);
@@ -161,40 +107,10 @@ function networkGameEvents (game, socket) {
         }
     }
 
-    function onMessage (message) {
-        const commands = message.split('.');
-        const command = commands[0];
-        const subcommand = commands[1] || null;
-        const commanddata = commands[2] || null;
-
-        switch (command) {
-            case 's': {
-                switch (subcommand) {
-                    case 'h': // host a game requested
-                        clientEvents.onHostGame(commanddata);
-
-                        break;
-                    case 'j': // join a game requested
-                        clientEvents.onJoinGame(commanddata);
-
-                        break;
-                    case 'e': // end game requested
-                        onDisconnect(commanddata);
-
-                        break;
-                    case 'c': // other player changed colors
-                        clientEvents.onColorChange(commanddata);
-
-                        break;
-                }
-                break;
-            }
-        }
-    }
-
     return {
         onStartGame,
-        onMessage,
+        onPlayerJoined,
+        onPlayerLeft,
         onConnect,
         onConnected,
         onDisconnect,

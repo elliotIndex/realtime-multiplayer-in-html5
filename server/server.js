@@ -36,15 +36,6 @@ function create (config) {
         if (message_type === 'i') {
             // Input handler will forward this
             onInput(client, message_parts);
-        } else if (message_type === 'p') {
-            client.send('s.p.' + message_parts[1]);
-        } else if (message_type === 'c') {    // Client changed their color!
-            for (const roomClient of client.currentRoom.clients) {
-                if (roomClient !== client) {
-                    roomClient.send('s.c.' + message_parts[1] + '_'
-                                    + roomClient.currentRoom.network.getPlayerByClient(client).id);
-                }
-            }
         }
     }
 
@@ -58,12 +49,11 @@ function create (config) {
         // Start updating the game loop on the server
         room.game.start();
 
-        // tell the eplayer that they are now the host
-        // s=server message, h=you are hosting
-        client.send('s.h.' + room.game.local_time.toString().replace('.', '-'));
         log('server host at  ' + room.game.local_time);
 
         log('player ' + client.id + ' created a room with id ' + room.id);
+
+        startGame(room);
     }
 
     function findGame (client) {
@@ -84,11 +74,6 @@ function create (config) {
                     // increase the player count and store
                     // the player as the client of this game
                     room.join(client);
-
-                    // start running the game on the server
-                    if (room.size === 3) {
-                        startGame(room);
-                    }
                 }
             }
 

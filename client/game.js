@@ -34,7 +34,6 @@ function game_core (options) {
 class GameClient extends game_core {
     constructor (options) {
         super(options);
-        this.localPlayerColor = '#cc8822';
         this.options = Object.assign({}, options);
         this._renderer = null;
         this._network = Network().connect(options.serverUrl);

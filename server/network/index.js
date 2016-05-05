@@ -17,21 +17,18 @@ function network () {
     }
 
     function sendUpdates (game) {
-        // Make a snapshot of the current state, for updating the clients
         const players = Array.from(game.players.values());
 
         if (players.length > 1) {
-            const state = {
-                serverTime: game.local_time
-            };
-
-            // Send the snapshot to the 'host' player
             for (const player of game.players) {
                 if (playerClients.has(player)) {
-                    state.ownPlayer = player.toJSON();
-                    state.players = Array.from(game.players.values()).filter(p => {
-                        return p !== player;
-                    });
+                    const state = {
+                        serverTime: game.local_time,
+                        ownPlayer: player.toJSON(),
+                        players: Array.from(game.players.values()).filter(p => {
+                            return p !== player;
+                        })
+                    };
 
                     playerClients.get(player).emit('onserverupdate', state);
                 }

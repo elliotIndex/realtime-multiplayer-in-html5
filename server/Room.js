@@ -50,9 +50,42 @@ class Room {
     join (client) {
         this.clients.add(client);
         client.currentRoom = this;
+
+        if (this.gameStarted) {
+            const player = new Player(uuid.v4());
+
+            this.game.addPlayer(player);
+            this.network.addClientPlayer(client, player);
+
+             const state = {
+                serverTime: this.game.local_time,
+                players: Array.from(this.game.players).filter(player => {
+                    return this.network.getPlayerByClient(client) !== player;
+                }).map(player => player.toJSON()),
+                    ownPlayer: this.network.getPlayerByClient(client).toJSON()
+            };
+
+            log('joining game');
+
+            client.emit('startGame', state);
+
+            for (const roomClient of this.clients) {
+                if (roomClient !== client) {
+                    roomClient.emit('playerJoined', player.toJSON());
+                }
+            }
+        }
     }
 
     leave (client) {
+        if (this.gameStarted) {
+            for (const roomClient of this.clients) {
+                if (roomClient !== client) {
+                    roomClient.emit('playerLeft', this.network.getPlayerByClient(client).id);
+                }
+            }
+        }
+
         this.network.removeClientPlayer(client);
         this.clients.delete(client);
         client.currentRoom = null;
@@ -68,10 +101,6 @@ class Room {
 
             this.game.addPlayer(player);
             this.network.addClientPlayer(client, player);
-
-            if (client !== this.host) {
-                client.send('s.j');
-            }
         }
 
         for (const client of this.clients) {
@@ -99,6 +128,8 @@ class Room {
             this.network = null;
             this.gameStarted = false;
         }
+
+        this.clients.clear();
     }
 }
 

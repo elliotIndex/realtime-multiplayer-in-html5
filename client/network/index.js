@@ -9,25 +9,27 @@ function network () {
     let netPing = 0.001;
     let netLatency = 0.001;
 
-    function receivePing (message) {
-        const commands = message.split('.');
-        const pingData = commands[2];
-
-        netPing = new Date().getTime() - Number.parseFloat(pingData);
+    function receivePing (data) {
+        netPing = new Date().getTime() - data;
         netLatency = netPing / 2;
     }
 
     function ping () {
         previousPing = new Date().getTime();
-        socket.send('p.' + previousPing);
+        socket.emit('clientPing', previousPing);
     }
 
     function listen (game) {
         const gameEvents = NetworkGameEvents(game, socket);
 
+        socket.on('serverPing', receivePing);
+
         socket.on('connect', gameEvents.onConnect);
 
         socket.on('disconnect', gameEvents.onDisconnect);
+
+        socket.on('playerJoined', gameEvents.onPlayerJoined);
+        socket.on('playerLeft', gameEvents.onPlayerLeft);
 
         // Sent each tick of the server simulation. This is our authoritive update
         socket.on('onserverupdate', gameEvents.onServerUpdate);
@@ -39,15 +41,6 @@ function network () {
 
         // On error we just show that we are not connected for now. Can print the data.
         socket.on('error', gameEvents.onDisconnect);
-
-        // On message from the server, we parse the commands and send it to the handlers
-        socket.on('message', (message) => {
-            if (message.substring(0, 3) === 's.p') {
-                receivePing(message);
-            } else {
-                gameEvents.onMessage(message);
-            }
-        });
 
         return socket;
     }

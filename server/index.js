@@ -27,14 +27,14 @@ function start () {
     // leaving games, joining games and ending games when they leave.
     const gameServer = GameServer.create(config);
 
-    // Socket.io will call this function when a client connects,
-    // So we can send that client looking for a game to play,
-    // as well as give that client a unique ID to use so we can
-    // maintain the list if players.
     io.sockets.on('connection', function (socket) {
         const client = new Client(socket);
 
         clients.set(client.id, client);
+
+        client.on('clientPing', (data) => {
+            client.emit('serverPing', data);
+        });
 
         // tell the player they connected, giving them their id
         client.emit('onconnected', { id: client.id });
@@ -61,13 +61,16 @@ function start () {
 
             // If the client was in a game, set by gameServer.findGame,
             // we can tell the game server to update that game state.
-            if (client.currentRoom) {
+            if (client.currentRoom && client.currentRoom.size === 1) {
                 // player leaving a game should destroy that game
                 gameServer.endGame(client.currentRoom.id, client);
+            } else if (client.currentRoom) {
+                client.currentRoom.leave(client);
             }
 
             clients.delete(client.id);
         });
+
 
         client.on('error', (err) => {
             log('Client error', err);
