@@ -10,7 +10,6 @@ class GameCore {
         this.options = options;
         this.network = null;
 
-        // A local timer for precision on server
         this.local_time = 0;
 
         this._collisionHandler = CollisionHandler(options.world);
@@ -23,13 +22,9 @@ class GameCore {
             }
         };
 
-        this._physicsLoop = MainLoop.create().setSimulationTimestep(options.simulationTimestemp).setUpdate((delta) => {
+        this._physicsLoop = MainLoop.create().setSimulationTimestep(options.simulationTimestemp);
+        this._physicsLoop.setUpdate((delta) => {
             this.updatePhysics(delta);
-
-            // Keep the physics position in the world
-            for (const player of this.players) {
-                this._collisionHandler.process(player);
-            }
         });
 
         this._networkLoop = MainLoop.create().setSimulationTimestep(options.networkTimestep).setUpdate(updateNetwork);
@@ -71,8 +66,9 @@ class GameCore {
 
             player.pos = Vector.add(player.old_state.pos, newDir);
 
-            // we have cleared the input buffer, so remove this
             player.inputs = [];
+
+            this._collisionHandler.process(player);
         }
     }
 }

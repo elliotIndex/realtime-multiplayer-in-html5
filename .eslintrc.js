@@ -1,11 +1,20 @@
 module.exports = {
+    "parserOptions": {
+        "ecmaVersion": 6,
+        "ecmaFeatures": {
+            "jsx": true
+        }
+    },
+    "plugins": [
+        "react"
+    ],
     "env": {
         "es6": true,
         "node": true,
         "mocha": true,
         "browser": true
     },
-    "extends": "eslint:recommended",
+    "extends": ["eslint:recommended", "plugin:react/recommended"],
     "rules": {
         "accessor-pairs": "error",
         "array-bracket-spacing": [

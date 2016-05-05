@@ -39,7 +39,6 @@ function network () {
     function receiveClientInput (client, input, inputTime, inputSeq) {
         const player = clientPlayers.get(client);
 
-        // Store the input on the player instance for processing in the physics loop
         player.inputs.push({
             inputs: input,
             time: inputTime,
