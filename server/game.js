@@ -43,7 +43,7 @@ class GameCore {
     }
 
     removePlayer (player) {
-        this.players.remove(player);
+        this.players.delete(player);
     }
 
     start () {

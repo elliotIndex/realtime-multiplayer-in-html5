@@ -6,7 +6,7 @@ const Room = require('./Room');
 const debug = require('debug');
 const log = debug('game:server/server');
 
-function create (config) {
+function create (config, clients) {
     const rooms = new Map();
 
     function startGame (room) {
@@ -46,6 +46,8 @@ function create (config) {
 
         room.setGame(new GameCore(config));
 
+        client.emit('onJoinedRoom', { room: room.toJSON() });
+
         // Start updating the game loop on the server
         room.game.start();
 
@@ -54,6 +56,10 @@ function create (config) {
         log('player ' + client.id + ' created a room with id ' + room.id);
 
         startGame(room);
+
+        for (const lobbyClient of clients.values()) {
+            lobbyClient.emit('roomCreated', { room: room.toJSON() });
+        }
     }
 
     function findGame (client) {
@@ -67,13 +73,15 @@ function create (config) {
             // Check the list of rooms for an open game
             for (const room of rooms.values()) {
                 // If the room is a player short
-                if (room.size < 3) {
+                if (room.size < 2) {
                     // someone wants us to join!
                     joined_a_game = true;
 
                     // increase the player count and store
                     // the player as the client of this game
                     room.join(client);
+
+                    client.emit('onJoinedRoom', { room: room.toJSON() });
                 }
             }
 
@@ -88,37 +96,16 @@ function create (config) {
     }
 
     // we are requesting to kill a game in progress.
-    function endGame (roomId, client) {
+    function endGame (roomId) {
         const room = rooms.get(roomId);
 
         if (room) {
             // stop the game updates immediate
             room.endGame();
 
-            // if the game has two players, the one is leaving
-            if (room.size > 1) {
-                // send the players the message the game is ending
-                if (client === room.host) {
-                    // the host left. Other players try to join another game
-                    for (const otherClient of room.clients) {
-                        if (client !== otherClient) {
-                            otherClient.send('s.e');
-
-                            // now look for/create a new game.
-                            findGame(otherClient);
-                        }
-                    }
-                } else if (room.host) {
-                    // Host is leaving, let all other players leave too
-                    for (const client of room.clients) {
-                        client.send('s.e');
-
-                        room.host.send('s.e');
-
-                        // now look for/create a new game.
-                        findGame(client);
-                    }
-                }
+            for (const lobbyClient of clients.values()) {
+                lobbyClient.emit('roomDeleted', { roomId });
+                lobbyClient.send('s.e');
             }
 
             rooms.delete(roomId);
@@ -135,7 +122,8 @@ function create (config) {
         startGame,
         endGame,
         createGame,
-        onInput
+        onInput,
+        rooms
     };
 }
 

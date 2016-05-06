@@ -1,10 +1,8 @@
 'use strict';
 
-const SocketClient = require('socket.io-client');
 const NetworkGameEvents = require('./game-events');
 
-function network () {
-    let socket = null;
+function network (socket) {
     let previousPing = 0.001;
     let netPing = 0.001;
     let netLatency = 0.001;
@@ -31,6 +29,8 @@ function network () {
         socket.on('playerJoined', gameEvents.onPlayerJoined);
         socket.on('playerLeft', gameEvents.onPlayerLeft);
 
+        socket.on('onLeftRoom', gameEvents.onDisconnect);
+
         // Sent each tick of the server simulation. This is our authoritive update
         socket.on('onserverupdate', gameEvents.onServerUpdate);
 
@@ -45,29 +45,21 @@ function network () {
         return socket;
     }
 
-    function connect (serverUrl) {
-        socket = new SocketClient(serverUrl);
-
-        return {
-            listen,
-            ping,
-
-            get netPing () {
-                return netPing;
-            },
-
-            get netLatency () {
-                return netLatency;
-            },
-
-            send (data) {
-                socket.send(data);
-            }
-        };
-    }
-
     return {
-        connect
+        listen,
+        ping,
+
+        get netPing () {
+            return netPing;
+        },
+
+        get netLatency () {
+            return netLatency;
+        },
+
+        send (data) {
+            socket.send(data);
+        }
     };
 }
 

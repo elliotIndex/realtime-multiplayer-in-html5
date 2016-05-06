@@ -25,7 +25,7 @@ function start () {
     // Enter the game server code. The game server handles
     // client connections looking for a game, creating games,
     // leaving games, joining games and ending games when they leave.
-    const gameServer = GameServer.create(config);
+    const gameServer = GameServer.create(config, clients);
 
     io.sockets.on('connection', function (socket) {
         const client = new Client(socket);
@@ -37,11 +37,43 @@ function start () {
         });
 
         // tell the player they connected, giving them their id
-        client.emit('onconnected', { id: client.id });
+        client.emit('onConnected', {
+            rooms: Array.from(gameServer.rooms.values()).map(room => {
+                return room.toJSON();
+            })
+        });
+
+        client.on('joinRoom', (data) => {
+            const room = gameServer.rooms.get(data.roomId);
+
+            if (room && !client.currentRoom) {
+                room.join(client);
+
+                client.emit('onJoinedRoom', { room: room.toJSON() });
+            }
+        });
+
+        client.on('leaveRoom', (data) => {
+            const room = gameServer.rooms.get(data.roomId);
+
+            if (room) {
+                room.leave(client);
+
+                if (room.size === 0) {
+                    gameServer.endGame(room.id);
+                }
+
+                client.emit('onLeftRoom', { room: room.toJSON() });
+            }
+        });
+
+        client.on('createRoom', () => {
+            gameServer.createGame(client);
+        });
 
         // now we can find them a game to play with someone.
         // if no game exists with someone waiting, they create one and wait.
-        gameServer.findGame(client);
+        // gameServer.findGame(client);
 
         // Useful to know when someone connects
         log('\t socket.io:: player ' + client.id + ' connected');
@@ -59,12 +91,13 @@ function start () {
             // Useful to know when soomeone disconnects
             log('\t socket.io:: client disconnected ' + client.id);
 
-            // If the client was in a game, set by gameServer.findGame,
-            // we can tell the game server to update that game state.
-            if (client.currentRoom && client.currentRoom.size === 1) {
-                // player leaving a game should destroy that game
-                gameServer.endGame(client.currentRoom.id, client);
-            } else if (client.currentRoom) {
+            if (client.currentRoom) {
+                if (client.currentRoom.size === 0) {
+                    gameServer.endGame(client.currentRoom.id);
+                }
+
+                client.emit('onLeftRoom', { room: client.currentRoom.toJSON() });
+
                 client.currentRoom.leave(client);
             }
 

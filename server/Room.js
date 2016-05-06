@@ -57,12 +57,12 @@ class Room {
             this.game.addPlayer(player);
             this.network.addClientPlayer(client, player);
 
-             const state = {
+            const state = {
                 serverTime: this.game.local_time,
                 players: Array.from(this.game.players).filter(player => {
                     return this.network.getPlayerByClient(client) !== player;
                 }).map(player => player.toJSON()),
-                    ownPlayer: this.network.getPlayerByClient(client).toJSON()
+                ownPlayer: this.network.getPlayerByClient(client).toJSON()
             };
 
             log('joining game');
@@ -79,11 +79,15 @@ class Room {
 
     leave (client) {
         if (this.gameStarted) {
+            const player = this.network.getPlayerByClient(client);
+
             for (const roomClient of this.clients) {
                 if (roomClient !== client) {
-                    roomClient.emit('playerLeft', this.network.getPlayerByClient(client).id);
+                    roomClient.emit('playerLeft', player.id);
                 }
             }
+
+            this.game.removePlayer(player);
         }
 
         this.network.removeClientPlayer(client);
@@ -109,7 +113,7 @@ class Room {
                 players: Array.from(this.game.players).filter(player => {
                     return this.network.getPlayerByClient(client) !== player;
                 }).map(player => player.toJSON()),
-                    ownPlayer: this.network.getPlayerByClient(client).toJSON()
+                ownPlayer: this.network.getPlayerByClient(client).toJSON()
             };
 
             log('starting game state', JSON.stringify(state, null, 4));
@@ -130,6 +134,13 @@ class Room {
         }
 
         this.clients.clear();
+    }
+
+    toJSON () {
+        return {
+            id: this.id,
+            size: this.size
+        };
     }
 }
 

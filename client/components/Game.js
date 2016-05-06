@@ -14,7 +14,9 @@ class Game extends React.Component {
 
         ctx.font = '11px "Helvetica"';
 
-        const game = new GameClient(Object.assign({}, this.props.gameConfig));
+        const game = new GameClient(Object.assign({
+            socket: this.props.socket
+        }, this.props.gameConfig));
         const renderer = Renderer(ctx, game.options);
 
         if (DEBUG) {
@@ -45,7 +47,8 @@ class Game extends React.Component {
 Game.propTypes = {
     width: React.PropTypes.number.isRequired,
     height: React.PropTypes.number.isRequired,
-    gameConfig: React.PropTypes.object
+    gameConfig: React.PropTypes.object,
+    socket: React.PropTypes.object.isRequired
 };
 
 module.exports = Game;

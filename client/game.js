@@ -36,7 +36,7 @@ class GameClient extends game_core {
         super(options);
         this.options = Object.assign({}, options);
         this._renderer = null;
-        this._network = Network().connect(options.serverUrl);
+        this._network = Network(options.socket);
         this._inputHandler = InputHandler();
         this._collisionHandler = CollisionHandler(options.world);
 

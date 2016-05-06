@@ -20,6 +20,13 @@ class Client {
     send (message) {
         this.socket.send(message);
     }
+
+    toJSON () {
+        return {
+            id: this.id,
+            currentRoom: this.currentRoom ? this.currentRoom.toJSON() : null
+        };
+    }
 }
 
 module.exports = Client;
