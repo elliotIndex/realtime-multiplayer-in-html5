@@ -6,7 +6,7 @@ module.exports = {
     devtool: 'cheap-eval-source-map',
     entry: './client/index.js',
     output: {
-        path: path.join(__dirname, '/dist'),
+        path: path.join(__dirname, 'dist'),
         filename: 'bundle.js'
     },
     module: {
@@ -18,6 +18,9 @@ module.exports = {
                 query: {
                     presets: ['es2015', 'react']
                 }
+            }, {
+                test: '/.css',
+                loader: 'style-loader!css-loader'
             }
         ]
     }

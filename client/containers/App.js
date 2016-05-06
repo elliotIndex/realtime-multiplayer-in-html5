@@ -30,12 +30,21 @@ class App extends React.Component {
         });
     }
 
+    onLogout () {
+        this.setState({
+            serverUrl: null,
+            loggedIn: false,
+            lobbyError: null
+        });
+    }
+
     render () {
         return (
             <div>
                 { this.state.loggedIn && !this.state.lobbyError ? (
                         <Lobby
                             serverUrl={ this.state.serverUrl }
+                            logoutHandler={ this.onLogout.bind(this) }
                             onLobbyError={ this.onLobbyError.bind(this) }
                         />
                     ) : (

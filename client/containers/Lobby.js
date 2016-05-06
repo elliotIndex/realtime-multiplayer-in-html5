@@ -80,9 +80,26 @@ class Lobby extends React.Component {
         }
     }
 
+    onLogout () {
+        if (this.state.socket) {
+            if (this.state.currentRoomId) {
+                this.onLeaveRoom(this.state.currentRoomId);
+            }
+
+            this.state.socket.close();
+        }
+
+        this.props.logoutHandler();
+    }
+
     render () {
         return (
             <div>
+                <button
+                    onClick={ this.onLogout.bind(this) }
+                >
+                    Logout
+                </button>
                 <RoomList
                     rooms={ this.state.rooms }
                     onRoomClick={ this.onJoinRoom.bind(this) }
@@ -106,7 +123,8 @@ class Lobby extends React.Component {
 
 Lobby.propTypes = {
     serverUrl: React.PropTypes.string.isRequired,
-    onLobbyError: React.PropTypes.func.isRequired
+    onLobbyError: React.PropTypes.func.isRequired,
+    logoutHandler: React.PropTypes.func.isRequired
 };
 
 module.exports = Lobby;
