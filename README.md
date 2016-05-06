@@ -1,31 +1,29 @@
-Realtime Multiplayer In HTML5
+Realtime multiplayer in the browser
 =============================
 
-Read the article here : 
-http://buildnewgames.com/real-time-multiplayer/
+:warning: Work in progress
 
-View the demo here :
-http://notes.underscorediscovery.com:4004/?debug
+This is a fork of [realtime-multiplayer-in-html5](https://github.com/underscorediscovery/realtime-multiplayer-in-html5), the source code
+that is referenced to in [this article](http://buildnewgames.com/real-time-multiplayer/).
 
-An example using node.js, socket.io and HTML5 Canvas to explain and demonstrate realtime multiplayer games in the browser.
+To get a better understaning of the realtime concept, I refactored the code in my own style.
+I added some new functionalities (and removed some).
 
-## Getting started (Using npm package.json)
-* Get node.js
-* run `npm install` inside the cloned folder
-* run `node app.js` inside the cloned folder
-* Visit http://127.0.0.1:4004/?debug
+## Usage
 
-## Getting started (Manual install)
+Run the server (will run on `http://localhost:4004`): 
 
-* Get node.js
-* Install socket.io `npm install socket.io`
-* Install node-udid `npm install node-uuid`
-* Install express `npm install express`
-* Run `node app.js` inside the cloned folder
-* Visit http://127.0.0.1:4004/?debug
+```
+npm start
+```
 
-## License
+Run the client (will run on `http://localhost:8080`):
 
-MIT Licensed. 
-See LICENSE if required.
+```
+npm run client
+```
 
+## Credits
+
+* [realtime-multiplayer-in-html5](https://github.com/underscorediscovery/realtime-multiplayer-in-html5): The original code this project is forked from.
+* [MainLoop.js](https://github.com/IceCreamYou/MainLoop.js): Included in the code to make the game loop in the right way.
