@@ -18,9 +18,9 @@ class RoomList extends React.Component {
                                 { this.props.rooms.map((room, index) => {
                                     return (
                                         <li key={ index }>
-                                        <a onClick={ this.props.onRoomClick.bind(this, room) } >
-                                        { room.id }
-                                        </a>
+                                            <a onClick={ this.props.onRoomClick.bind(this, room) } >
+                                                { room.id }
+                                            </a>
                                         </li>
                                     );
                                 }) }

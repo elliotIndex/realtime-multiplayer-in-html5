@@ -10,33 +10,30 @@ const CollisionHandler = require('../lib/collision');
 const processInput = require('../lib/physics/process-input');
 const processNetworkUpdates = require('./network/process-updates');
 
-function game_core (options) {
-    this.players = new Map();
-    this.serverGhosts = new Map();
-    this.localGhosts = new Map();
+class GameClient {
+    constructor (options, socket) {
+        this.options = options;
+        this.players = new Map();
+        this.serverGhosts = new Map();
+        this.localGhosts = new Map();
 
-    // A local timer for precision on client
-    this.local_time = 0;
+        // A local timer for precision on client
+        this.local_time = 0;
 
-    // Create the default configuration settings
-    this.input_seq = 0;          // When predicting client inputs, we store the last input as a sequence number
-    this.net_latency = 0.001;    // the latency between the client and the server (ping/2)
-    this.last_ping_time = 0.001; // The time we last sent a ping
-    this.target_time = 0.01;     // the time where we want to be in the server timeline
-    this.client_time = 0.01;     // Our local 'clock' based on server time - client interpolation(net_offset).
-    this.server_time = 0.01;     // The time the server reported it was at, last we heard from it
+        // Create the default configuration settings
+        this.input_seq = 0;          // When predicting client inputs, we store the last input as a sequence number
+        this.net_latency = 0.001;    // the latency between the client and the server (ping/2)
+        this.last_ping_time = 0.001; // The time we last sent a ping
+        this.target_time = 0.01;     // the time where we want to be in the server timeline
+        this.client_time = 0.01;     // Our local 'clock' based on server time - client interpolation(networkOffset).
+        this.server_time = 0.01;     // The time the server reported it was at, last we heard from it
 
-    // A list of recent server updates we interpolate across
-    // This is the buffer that is the driving factor for our networking
-    this.server_updates = [];
-}
+        // A list of recent server updates we interpolate across
+        // This is the buffer that is the driving factor for our networking
+        this.server_updates = [];
 
-class GameClient extends game_core {
-    constructor (options) {
-        super(options);
-        this.options = Object.assign({}, options);
         this._renderer = null;
-        this._network = Network(options.socket);
+        this._network = Network(socket);
         this._inputHandler = InputHandler();
         this._collisionHandler = CollisionHandler(options.world);
 
@@ -55,7 +52,7 @@ class GameClient extends game_core {
         };
 
         const updateView = (interpolation) => {
-            if (!this.options.naive_approach && this.server_updates.length > 0) {
+            if (!this.options.naiveApproach && this.server_updates.length > 0) {
                 // Network player just gets drawn normally, with interpolation from
                 // the server updates, smoothing out the positions from the past.
                 // Note that if we don't have prediction enabled - this will also
@@ -73,17 +70,24 @@ class GameClient extends game_core {
         this._timer = MainLoop.create().setSimulationTimestep(options.timerFrequency).setUpdate((delta) => {
             this.local_time += delta / 1000;
         });
+
+        this._network.listen(this);
+
+        // Ping the server
+        setInterval(() => {
+            this._network.ping();
+        }, this.options.pingTimeout || 1000);
     }
 
 
     updatePhysics (delta) {
         // Fetch the new direction from the input buffer,
         // and apply it to the state so we can smooth it in the visual state
-        if (this.options.client_predict) {
+        if (this.options.clientPrediction) {
             if (this.localPlayer) {
                 const player = this.localPlayer;
 
-                player.old_state.pos = Vector.copy(player.cur_state.pos)
+                player.old_state.pos = Vector.copy(player.cur_state.pos);
 
                 const newDir = processInput(player, delta);
 
@@ -100,7 +104,7 @@ class GameClient extends game_core {
     _updateInput () {
         const input = this._inputHandler.getInput();
 
-        if (input.length > 0) {
+        if (input.length > 0 && this.localPlayer) {
             // Update what sequence we are on now
             this.input_seq += 1;
 
@@ -180,13 +184,6 @@ class GameClient extends game_core {
         this._timer.start();
         this._renderer = renderer;
         this._physicsLoop.start();
-
-        this._network.listen(this);
-
-        // Ping the server
-        setInterval(() => {
-            this._network.ping();
-        }, this.options.pingTimeout || 1000);
     }
 
     stop () {

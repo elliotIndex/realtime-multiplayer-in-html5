@@ -2,7 +2,11 @@
 
 const React = require('react');
 const Login = require('../components/Login');
+const Settings = require('../components/Settings');
 const Lobby = require('./Lobby');
+
+const clientConfig = require('./../client-config');
+const gameConfig = require('../../lib/game-config');
 
 class App extends React.Component {
     constructor (props) {
@@ -11,7 +15,8 @@ class App extends React.Component {
         this.state = {
             loggedIn: false,
             serverUrl: null,
-            lobbyError: null
+            lobbyError: null,
+            gameSettings: Object.assign({}, gameConfig, clientConfig)
         };
     }
 
@@ -38,11 +43,20 @@ class App extends React.Component {
         });
     }
 
+    onSettingsChange (settings) {
+        Object.assign(this.state.gameSettings, settings);
+    }
+
     render () {
         return (
             <div>
+                <Settings
+                    settingsChangeHandler={ this.onSettingsChange.bind(this) }
+                    defaultSettings={ clientConfig }
+                />
                 { this.state.loggedIn && !this.state.lobbyError ? (
                         <Lobby
+                            gameSettings={ this.state.gameSettings }
                             serverUrl={ this.state.serverUrl }
                             logoutHandler={ this.onLogout.bind(this) }
                             onLobbyError={ this.onLobbyError.bind(this) }

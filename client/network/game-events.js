@@ -48,14 +48,14 @@ function networkGameEvents (game) {
         game.server_time = data.serverTime;
 
         // Update our local offset time from the last server update
-        game.client_time = game.server_time - (game.options.net_offset / 1000);
+        game.client_time = game.server_time - (game.options.networkOffset / 1000);
 
         // One approach is to set the position directly as the server tells you.
         // This is a common mistake and causes somewhat playable results on a local LAN, for example,
         // but causes terrible lag when any ping/latency is introduced. The player can not deduce any
         // information to interpolate with so it misses positions, and packet loss destroys this approach
         // even more so. See 'the bouncing ball problem' on Wikipedia.
-        if (game.options.naive_approach) {
+        if (game.options.naiveApproach) {
             game.localPlayer.pos = Vector.copy(data.ownPlayer.position);
 
             for (const playerData of data.players) {
@@ -66,13 +66,13 @@ function networkGameEvents (game) {
         } else {
             // Cache the data from the server,
             // and then play the timeline
-            // back to the player with a small delay (net_offset), allowing
+            // back to the player with a small delay (networkOffset), allowing
             // interpolation between the points.
             game.server_updates.push(data);
 
             // we limit the buffer in seconds worth of updates
             // 60fps*buffer seconds = number of samples
-            if (game.server_updates.length >= (60 * game.options.buffer_size)) {
+            if (game.server_updates.length >= (60 * game.options.networkBufferSize)) {
                 game.server_updates.splice(0, 1);
             }
 

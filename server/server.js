@@ -46,6 +46,8 @@ function create (config, clients) {
 
         room.setGame(new GameCore(config));
 
+        // room.join(client);
+
         client.emit('onJoinedRoom', { room: room.toJSON() });
 
         // Start updating the game loop on the server
@@ -59,39 +61,6 @@ function create (config, clients) {
 
         for (const lobbyClient of clients.values()) {
             lobbyClient.emit('roomCreated', { room: room.toJSON() });
-        }
-    }
-
-    function findGame (client) {
-        log('looking for a game. We have : ' + rooms.size);
-
-        // so there are rooms active,
-        // lets see if one needs another player
-        if (rooms.size > 0) {
-            let joined_a_game = false;
-
-            // Check the list of rooms for an open game
-            for (const room of rooms.values()) {
-                // If the room is a player short
-                if (room.size < 2) {
-                    // someone wants us to join!
-                    joined_a_game = true;
-
-                    // increase the player count and store
-                    // the player as the client of this game
-                    room.join(client);
-
-                    client.emit('onJoinedRoom', { room: room.toJSON() });
-                }
-            }
-
-            // if we didn't join a game, we must create one
-            if (!joined_a_game) {
-                createGame(client);
-            }
-        } else {
-            // no rooms? create one!
-            createGame(client);
         }
     }
 
@@ -117,7 +86,6 @@ function create (config, clients) {
     }
 
     return {
-        findGame,
         onMessage,
         startGame,
         endGame,

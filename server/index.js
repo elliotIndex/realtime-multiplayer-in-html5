@@ -71,10 +71,6 @@ function start () {
             gameServer.createGame(client);
         });
 
-        // now we can find them a game to play with someone.
-        // if no game exists with someone waiting, they create one and wait.
-        // gameServer.findGame(client);
-
         // Useful to know when someone connects
         log('\t socket.io:: player ' + client.id + ' connected');
 

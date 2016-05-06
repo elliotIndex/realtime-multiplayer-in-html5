@@ -90,7 +90,7 @@ function processNetworkUpdates (game, interpolation) {
             ghosts.server.position = Vector.copy(other_server_pos);
             ghosts.local.position = Vector.lerp(other_past_pos, other_target_pos, timePoint);
 
-            if (game.options.client_smoothing) {
+            if (game.options.clientSmoothing) {
                 player.pos = Vector.lerp(player.pos, ghosts.local.position, interpolation);
             } else {
                 player.pos = Vector.copy(ghosts.local.position);
@@ -99,7 +99,7 @@ function processNetworkUpdates (game, interpolation) {
 
         // Now, if not predicting client movement , we will maintain the local player position
         // using the same method, smoothing the players information from the past.
-        if (!game.options.client_predict && !game.options.naive_approach) {
+        if (!game.options.clientPrediction && !game.options.naiveApproach) {
             // These are the exact server positions from this tick, but only for the ghost
             const localPlayer = game.getPlayerById(latest_server_data.ownPlayer.id);
 
@@ -117,7 +117,7 @@ function processNetworkUpdates (game, interpolation) {
             const local_target = Vector.lerp(my_past_pos, my_target_pos, timePoint);
 
             // Smoothly follow the destination position
-            if (game.options.client_smoothing) {
+            if (game.options.clientSmoothing) {
                 localPlayer.pos = Vector.lerp(localPlayer.pos, local_target, interpolation);
             } else {
                 localPlayer.pos = Vector.copy(local_target);

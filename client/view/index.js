@@ -15,7 +15,7 @@ function renderer (ctx, options = {}) {
 
             const ghosts = game.getGhosts(player.id);
 
-            if (options.show_dest_pos && !options.naive_approach && player !== game.localPlayer) {
+            if (options.showDestinationPosition && !options.naiveApproach && player !== game.localPlayer) {
                 drawPlayer(ctx, Object.assign({}, ghosts.local, {
                     width: player.width,
                     height: player.height
@@ -24,7 +24,7 @@ function renderer (ctx, options = {}) {
                 });
             }
 
-            if (options.show_server_pos && !options.naive_approach) {
+            if (options.showServerPosition && !options.naiveApproach) {
                 const ghostOptions = {
                     stateText: 'server_pos',
                     infoColor: 'rgba(255,255,255,0.2)'

@@ -1,10 +1,8 @@
 'use strict';
 
 const React = require('react');
-const GameClient = require('../game');
 const Renderer = require('../view');
 const debugView = require('../view/debug');
-const Player = require('../../lib/Player');
 const DEBUG = true;
 
 class Game extends React.Component {
@@ -14,21 +12,13 @@ class Game extends React.Component {
 
         ctx.font = '11px "Helvetica"';
 
-        const game = new GameClient(Object.assign({
-            socket: this.props.socket
-        }, this.props.gameConfig));
-        const renderer = Renderer(ctx, game.options);
+        const renderer = Renderer(ctx, this.props.gameClient.options);
 
         if (DEBUG) {
-            debugView(game);
+            debugView(this.props.gameClient);
         }
 
-        const localPlayer = new Player('local');
-
-        game.addPlayer(localPlayer);
-        game.setLocalPlayer(localPlayer);
-
-        game.start(renderer);
+        this.props.gameClient.start(renderer);
     }
 
     render () {
@@ -47,8 +37,7 @@ class Game extends React.Component {
 Game.propTypes = {
     width: React.PropTypes.number.isRequired,
     height: React.PropTypes.number.isRequired,
-    gameConfig: React.PropTypes.object,
-    socket: React.PropTypes.object.isRequired
+    gameClient: React.PropTypes.object.isRequired
 };
 
 module.exports = Game;

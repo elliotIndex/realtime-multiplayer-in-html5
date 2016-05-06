@@ -6,9 +6,6 @@ function inputHandler () {
     const keyboard = new KeyboardState();
 
     function getInput () {
-        // This takes input from the client and keeps a record,
-        // It also sends the input information to the server immediately
-        // as it is pressed. It also tags each input with a sequence number.
         const input = [];
 
         if (keyboard.pressed('A') || keyboard.pressed('left')) {

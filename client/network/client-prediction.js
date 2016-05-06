@@ -12,6 +12,10 @@ function clientPrediction (game) {
     // Update the debug server position block
     const ghosts = game.getGhosts(latest_server_data.ownPlayer.id);
 
+    if (!ghosts.server) {
+        return;
+    }
+
     ghosts.server.position = Vector.copy(my_server_pos);
 
     // here we handle our local input prediction ,

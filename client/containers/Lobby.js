@@ -4,10 +4,8 @@ const React = require('react');
 const SocketClient = require('socket.io-client');
 const RoomList = require('../components/RoomList');
 const Game = require('../components/Game');
-const clientConfig = require('./../client-config');
-const gameConfig = require('../../lib/game-config');
+const GameClient = require('../game');
 
-const config = Object.assign({}, gameConfig, clientConfig);
 
 class Lobby extends React.Component {
     constructor (props) {
@@ -16,11 +14,12 @@ class Lobby extends React.Component {
         this.state = {
             socket: null,
             rooms: [],
-            currentRoomId: null
+            currentRoomId: null,
+            gameClient: null
         };
     }
 
-    componentDidMount () {
+    componentWillMount () {
         const socket = new SocketClient(this.props.serverUrl);
 
         socket.on('connect_error', () => {
@@ -30,9 +29,12 @@ class Lobby extends React.Component {
 
         socket.on('connect', () => {
             socket.on('onConnected', (data) => {
+                const gameClient = new GameClient(this.props.gameSettings, socket);
+
                 this.setState({
                     socket: socket,
-                    rooms: data.rooms
+                    rooms: data.rooms,
+                    gameClient: gameClient
                 });
             });
 
@@ -107,12 +109,11 @@ class Lobby extends React.Component {
                     onRoomLeaveClick={ this.onLeaveRoom.bind(this) }
                     currentRoomId={ this.state.currentRoomId }
                 />
-                { this.state.socket ? (
+                { this.state.socket && this.state.currentRoomId ? (
                         <Game
-                            socket={ this.state.socket }
-                            width={ config.world.width }
-                            height={ config.world.height }
-                            gameConfig={ config }
+                            width={ this.props.gameSettings.world.width }
+                            height={ this.props.gameSettings.world.height }
+                            gameClient={ this.state.gameClient }
                         />
                     ) : null
                 }
@@ -124,7 +125,8 @@ class Lobby extends React.Component {
 Lobby.propTypes = {
     serverUrl: React.PropTypes.string.isRequired,
     onLobbyError: React.PropTypes.func.isRequired,
-    logoutHandler: React.PropTypes.func.isRequired
+    logoutHandler: React.PropTypes.func.isRequired,
+    gameSettings: React.PropTypes.object.isRequired,
 };
 
 module.exports = Lobby;
