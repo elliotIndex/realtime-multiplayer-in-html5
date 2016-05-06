@@ -23,6 +23,11 @@ class Lobby extends React.Component {
     componentDidMount () {
         const socket = new SocketClient(this.props.serverUrl);
 
+        socket.on('connect_error', () => {
+            this.props.onLobbyError('Error connecting to server.');
+            socket.close();
+        });
+
         socket.on('connect', () => {
             socket.on('onConnected', (data) => {
                 this.setState({
@@ -100,7 +105,8 @@ class Lobby extends React.Component {
 }
 
 Lobby.propTypes = {
-    serverUrl: React.PropTypes.string.isRequired
+    serverUrl: React.PropTypes.string.isRequired,
+    onLobbyError: React.PropTypes.func.isRequired
 };
 
 module.exports = Lobby;

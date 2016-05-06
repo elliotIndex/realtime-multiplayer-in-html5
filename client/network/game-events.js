@@ -5,10 +5,6 @@ const Player = require('../../lib/Player');
 const Vector = require('../../lib/vector');
 
 function networkGameEvents (game) {
-    function onConnect () {
-        console.log('trying to connect');
-    }
-
     function onStartGame (data) {
         const serverTime = data.serverTime;
 
@@ -16,7 +12,7 @@ function networkGameEvents (game) {
 
         console.log('server time is about ' + game.local_time);
 
-        game.clearPlayers(); // FIXME hacky
+        game.clearPlayers();
 
         for (const playerData of data.players) {
             const player = new Player(playerData.id);
@@ -32,10 +28,6 @@ function networkGameEvents (game) {
 
         game.addPlayer(localPlayer);
         game.setLocalPlayer(localPlayer);
-    }
-
-    function onConnected () {
-        console.log('connected');
     }
 
     function onPlayerJoined (playerData) {
@@ -111,8 +103,6 @@ function networkGameEvents (game) {
         onStartGame,
         onPlayerJoined,
         onPlayerLeft,
-        onConnect,
-        onConnected,
         onDisconnect,
         onServerUpdate
     };

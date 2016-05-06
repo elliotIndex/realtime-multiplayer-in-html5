@@ -10,28 +10,45 @@ class App extends React.Component {
 
         this.state = {
             loggedIn: false,
-            serverUrl: null
+            serverUrl: null,
+            lobbyError: null
         };
     }
 
     onLogin (values) {
         this.setState({
             loggedIn: true,
-            serverUrl: values.server
+            serverUrl: values.server,
+            lobbyError: null
+        });
+    }
+
+    onLobbyError (error) {
+        this.setState({
+            loggedIn: false,
+            lobbyError: error
         });
     }
 
     render () {
         return (
             <div>
-                <Login
-                    submitHandler={ this.onLogin.bind(this) }
-                />
-
-                { this.state.loggedIn ? (
+                { this.state.loggedIn && !this.state.lobbyError ? (
                         <Lobby
                             serverUrl={ this.state.serverUrl }
+                            onLobbyError={ this.onLobbyError.bind(this) }
                         />
+                    ) : (
+                        <Login
+                            submitHandler={ this.onLogin.bind(this) }
+                        />
+                    )
+                }
+
+                { this.state.lobbyError ? (
+                    <div>
+                        { this.state.lobbyError }
+                    </div>
                     ) : null
                 }
             </div>

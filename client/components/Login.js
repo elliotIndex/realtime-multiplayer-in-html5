@@ -29,7 +29,7 @@ class Login extends React.Component {
                 <input
                     type="text"
                     value={ this.state.server }
-                    onChange={ this.handleServerChange }
+                    onChange={ this.handleServerChange.bind(this) }
                 />
                 <input
                     type="submit"

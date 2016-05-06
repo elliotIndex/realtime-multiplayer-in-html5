@@ -22,10 +22,6 @@ function network (socket) {
 
         socket.on('serverPing', receivePing);
 
-        socket.on('connect', gameEvents.onConnect);
-
-        socket.on('disconnect', gameEvents.onDisconnect);
-
         socket.on('playerJoined', gameEvents.onPlayerJoined);
         socket.on('playerLeft', gameEvents.onPlayerLeft);
 
