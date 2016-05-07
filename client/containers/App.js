@@ -50,10 +50,13 @@ class App extends React.Component {
     render () {
         return (
             <div>
-                <Settings
-                    settingsChangeHandler={ this.onSettingsChange.bind(this) }
-                    defaultSettings={ clientConfig }
-                />
+                { this.state.lobbyError ? (
+                    <div>
+                        { this.state.lobbyError }
+                    </div>
+                    ) : null
+                }
+
                 { this.state.loggedIn && !this.state.lobbyError ? (
                         <Lobby
                             gameSettings={ this.state.gameSettings }
@@ -68,10 +71,11 @@ class App extends React.Component {
                     )
                 }
 
-                { this.state.lobbyError ? (
-                    <div>
-                        { this.state.lobbyError }
-                    </div>
+                { this.state.loggedIn ? (
+                        <Settings
+                            settingsChangeHandler={ this.onSettingsChange.bind(this) }
+                            defaultSettings={ clientConfig }
+                        />
                     ) : null
                 }
             </div>

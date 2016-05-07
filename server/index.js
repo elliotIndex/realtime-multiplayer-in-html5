@@ -22,9 +22,6 @@ function start () {
 
     log('Listening on port ' + config.port);
 
-    // Enter the game server code. The game server handles
-    // client connections looking for a game, creating games,
-    // leaving games, joining games and ending games when they leave.
     const gameServer = GameServer.create(config, clients);
 
     io.sockets.on('connection', function (socket) {
@@ -36,7 +33,6 @@ function start () {
             client.emit('serverPing', data);
         });
 
-        // tell the player they connected, giving them their id
         client.emit('onConnected', {
             rooms: Array.from(gameServer.rooms.values()).map(room => {
                 return room.toJSON();
@@ -71,24 +67,17 @@ function start () {
             gameServer.createGame(client);
         });
 
-        // Useful to know when someone connects
         log('\t socket.io:: player ' + client.id + ' connected');
 
-        // Now we want to handle some of the messages that clients will send.
-        // They send messages here, and we send them to the gameServer to handle.
         client.on('message', (message) => {
             gameServer.onMessage(client, message);
         });
 
-        // When this client disconnects, we want to tell the game server
-        // about that as well, so it can remove them from the game they are
-        // in, and make sure the other player knows that they left and so on.
         client.on('disconnect', function () {
-            // Useful to know when soomeone disconnects
             log('\t socket.io:: client disconnected ' + client.id);
 
             if (client.currentRoom) {
-                if (client.currentRoom.size === 0) {
+                if (client.currentRoom.size === 1) {
                     gameServer.endGame(client.currentRoom.id);
                 }
 

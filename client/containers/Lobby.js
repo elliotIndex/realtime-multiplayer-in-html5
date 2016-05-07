@@ -5,6 +5,7 @@ const SocketClient = require('socket.io-client');
 const RoomList = require('../components/RoomList');
 const Game = require('../components/Game');
 const GameClient = require('../game/GameClient');
+const Stats = require('../components/Stats');
 
 class Lobby extends React.Component {
     constructor (props) {
@@ -96,26 +97,37 @@ class Lobby extends React.Component {
     render () {
         return (
             <div>
-                <button
-                    onClick={ this.onLogout.bind(this) }
-                >
-                    Logout
-                </button>
-                <RoomList
-                    rooms={ this.state.rooms }
-                    onRoomClick={ this.onJoinRoom.bind(this) }
-                    onRoomCreateClick={ this.onCreateRoom.bind(this) }
-                    onRoomLeaveClick={ this.onLeaveRoom.bind(this) }
-                    currentRoomId={ this.state.currentRoomId }
-                />
-                { this.state.socket && this.state.currentRoomId ? (
-                        <Game
-                            width={ this.props.gameSettings.world.width }
-                            height={ this.props.gameSettings.world.height }
-                            gameClient={ this.state.gameClient }
+                <div className="grid">
+                    <div className="col-2-12">
+                        <button
+                            onClick={ this.onLogout.bind(this) }
+                        >
+                            Logout
+                        </button>
+                        <RoomList
+                            rooms={ this.state.rooms }
+                            onRoomClick={ this.onJoinRoom.bind(this) }
+                            onRoomCreateClick={ this.onCreateRoom.bind(this) }
+                            onRoomLeaveClick={ this.onLeaveRoom.bind(this) }
+                            currentRoomId={ this.state.currentRoomId }
                         />
-                    ) : null
-                }
+                    </div>
+                    <div className="col-10-12">
+                        { this.state.gameClient && this.state.currentRoomId ? (
+                                <div>
+                                    <Game
+                                        width={ this.props.gameSettings.world.width }
+                                        height={ this.props.gameSettings.world.height }
+                                        gameClient={ this.state.gameClient }
+                                    />
+                                    <Stats
+                                        game={ this.state.gameClient }
+                                    />
+                                </div>
+                            ) : null
+                        }
+                    </div>
+                </div>
             </div>
         );
     }

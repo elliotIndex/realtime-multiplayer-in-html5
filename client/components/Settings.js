@@ -38,7 +38,8 @@ class Settings extends React.Component {
     render () {
         return (
             <form>
-                <ul>
+                <h4>Settings</h4>
+                <ul className="horizontal-list square-font">
                     <li>
                         <label>
                             <input
@@ -105,6 +106,8 @@ class Settings extends React.Component {
                             <input
                                 type="input"
                                 name="networkOffset"
+                                size={ 4 }
+                                maxlength={ 4 }
                                 value={ this.state.networkOffset }
                                 onChange={ this.handleValueChange.bind(this) }
                             />
@@ -117,6 +120,8 @@ class Settings extends React.Component {
                             <input
                                 type="input"
                                 name="networkBufferSize"
+                                size={ 4 }
+                                maxlength={ 4 }
                                 value={ this.state.networkBufferSize }
                                 onChange={ this.handleValueChange.bind(this) }
                             />

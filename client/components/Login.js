@@ -19,23 +19,28 @@ class Login extends React.Component {
 
     render () {
         return (
-            <form
-                onSubmit={ (event) => {
-                    event.preventDefault();
+            <div className="center">
+                <form
+                    onSubmit={ (event) => {
+                        event.preventDefault();
 
-                    this.props.submitHandler(this.state);
-                } }
-            >
-                <input
-                    type="text"
-                    value={ this.state.server }
-                    onChange={ this.handleServerChange.bind(this) }
-                />
-                <input
-                    type="submit"
-                    value="Login"
-                />
-            </form>
+                        this.props.submitHandler(this.state);
+                    } }
+                >
+                    <label>
+                        Server url
+                        <input
+                            type="text"
+                            value={ this.state.server }
+                            onChange={ this.handleServerChange.bind(this) }
+                        />
+                    </label>
+                    <input
+                        type="submit"
+                        value="Login"
+                    />
+                </form>
+            </div>
         );
     }
 }

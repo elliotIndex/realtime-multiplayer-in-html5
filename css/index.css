@@ -1,17 +1,31 @@
-html , body {
-	background: #212121; 
-	color: #fff; 
-	font-family: Helvetica;
-	margin: 0; 
-	padding: 0;
-}
-
 .game {
 	border:solid 1px #333;
-	height : 480px;
+    background-color: #192b3c;
 	margin: auto;
-	left:0; right:0; top:0; bottom:0;
-	position: absolute;
 	width : 720px;
-	z-index:100;
+}
+
+.center {
+    display: table;
+    margin: 0 auto;
+}
+
+ul.horizontal-list {
+    list-style-type: none;
+    margin: 0;
+    padding: 0
+}
+
+ul.horizontal-list li {
+    display: inline;
+    padding-right: 1em;
+}
+
+ul.horizontal-list  li:last-child {
+    padding-right: 0;
+}
+
+.square-font {
+    font-family: "courier", monospace;
+    font-size: 80%;
 }

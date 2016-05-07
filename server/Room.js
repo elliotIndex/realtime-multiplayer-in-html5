@@ -88,9 +88,9 @@ class Room {
             }
 
             this.game.removePlayer(player);
+            this.network.removeClientPlayer(client);
         }
 
-        this.network.removeClientPlayer(client);
         this.clients.delete(client);
         client.currentRoom = null;
     }

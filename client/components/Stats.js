@@ -36,7 +36,7 @@ class Stats extends React.Component {
     render () {
         return (
             <div>
-                <ul>
+                <ul className="horizontal-list square-font">
                     <li>Server time: { this.state.serverTime }</li>
                     <li>Client time: { this.state.clientTime }</li>
                     <li>Local time: { this.state.localTime }</li>

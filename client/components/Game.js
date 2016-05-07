@@ -2,7 +2,6 @@
 
 const React = require('react');
 const Renderer = require('../game/view');
-const Stats = require('./Stats');
 
 class Game extends React.Component {
     componentDidMount () {
@@ -26,9 +25,6 @@ class Game extends React.Component {
                     height={ this.props.height }
                 >
                 </canvas>
-                <Stats
-                    game={ this.props.gameClient }
-                />
             </div>
         );
     }
