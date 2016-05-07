@@ -4,8 +4,7 @@ const React = require('react');
 const SocketClient = require('socket.io-client');
 const RoomList = require('../components/RoomList');
 const Game = require('../components/Game');
-const GameClient = require('../game');
-
+const GameClient = require('../game/GameClient');
 
 class Lobby extends React.Component {
     constructor (props) {

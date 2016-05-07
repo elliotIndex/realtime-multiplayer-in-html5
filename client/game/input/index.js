@@ -1,6 +1,6 @@
 'use strict';
 
-const KeyboardState = require('../../lib/keyboard');
+const KeyboardState = require('./utils/keyboard');
 
 function inputHandler () {
     const keyboard = new KeyboardState();

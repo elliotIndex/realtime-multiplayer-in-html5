@@ -25,8 +25,7 @@
 // # Code
 //
 
-/** @namespace */
-var THREEx	= THREEx 		|| {};
+const THREEx = {};
 
 /**
  * - NOTE: it would be quite easy to push event-driven too

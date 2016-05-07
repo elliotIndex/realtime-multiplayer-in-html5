@@ -1,13 +1,12 @@
 'use strict';
 
-const MainLoop = require('../lib/mainloop');
+const MainLoop = require('../../lib/mainloop');
 const Network = require('./network');
 const InputHandler = require('./input');
-const Player = require('../lib/Player');
-const Vector = require('../lib/vector');
-const fixedNumber = require('../lib/fixed-number');
-const CollisionHandler = require('../lib/collision');
-const processInput = require('../lib/physics/process-input');
+const Vector = require('../../lib/vector');
+const fixedNumber = require('../../lib/fixed-number');
+const CollisionHandler = require('../../lib/collision');
+const processInput = require('../../lib/physics/process-input');
 const processNetworkUpdates = require('./network/process-updates');
 
 class GameClient {
@@ -33,11 +32,13 @@ class GameClient {
         this.server_updates = [];
 
         this._renderer = null;
-        this._network = Network(socket);
+        this._network = Network(this, socket);
         this._inputHandler = InputHandler();
         this._collisionHandler = CollisionHandler(options.world);
 
         this.localPlayer = null;
+
+        this.afterViewLoopHooks = {};
 
         const updateLogic = (delta) => {
             this._updateInput();
@@ -61,6 +62,10 @@ class GameClient {
             }
 
             this._renderer.draw(this);
+
+            for (const hookName of Object.keys(this.afterViewLoopHooks)) {
+                this.afterViewLoopHooks[hookName](this);
+            }
         };
 
         this._physicsLoop = MainLoop.create();
@@ -79,6 +84,15 @@ class GameClient {
         }, this.options.pingTimeout || 1000);
     }
 
+    addAfterViewLoopHook (name, hook) {
+        this.afterViewLoopHooks[name] = hook;
+    }
+
+    removeAfterViewLoopHook (name) {
+        if (this.afterViewLoopHooks[name]) {
+            delete this.afterViewLoopHooks[name];
+        }
+    }
 
     updatePhysics (delta) {
         // Fetch the new direction from the input buffer,

@@ -19,12 +19,20 @@ class Settings extends React.Component {
         this.setState({
             [event.target.name]: event.target.checked
         });
-
-        this.handleSettingsChange();
     }
 
-    handleSettingsChange () {
-        this.props.settingsChangeHandler(Object.assign({}, this.state));
+    shouldComponentUpdate (nextProps, nextState) {
+        const shouldUpdate = Object.keys(this.state).some((stateProp) => {
+            return this.state[stateProp] !== nextState[stateProp];
+        });
+
+        if (shouldUpdate) {
+            this.props.settingsChangeHandler(Object.assign({}, nextState));
+
+            return true;
+        }
+
+        return false;
     }
 
     render () {
@@ -99,7 +107,6 @@ class Settings extends React.Component {
                                 name="networkOffset"
                                 value={ this.state.networkOffset }
                                 onChange={ this.handleValueChange.bind(this) }
-                                onBlur={ this.handleSettingsChange.bind(this) }
                             />
                         </label>
                     </li>
@@ -112,7 +119,6 @@ class Settings extends React.Component {
                                 name="networkBufferSize"
                                 value={ this.state.networkBufferSize }
                                 onChange={ this.handleValueChange.bind(this) }
-                                onBlur={ this.handleSettingsChange.bind(this) }
                             />
                         </label>
                     </li>

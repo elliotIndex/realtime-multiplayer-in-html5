@@ -1,7 +1,7 @@
 'use strict';
 
-const Vector = require('../../lib/vector');
-const fixedNumber = require('../../lib/fixed-number');
+const Vector = require('../../../lib/vector');
+const fixedNumber = require('../../../lib/fixed-number');
 
 function processNetworkUpdates (game, interpolation) {
     // No updates

@@ -2,7 +2,7 @@
 
 const NetworkGameEvents = require('./game-events');
 
-function network (socket) {
+function network (game, socket) {
     let previousPing = 0.001;
     let netPing = 0.001;
     let netLatency = 0.001;
@@ -17,7 +17,7 @@ function network (socket) {
         socket.emit('clientPing', previousPing);
     }
 
-    function listen (game) {
+    function listen () {
         const gameEvents = NetworkGameEvents(game, socket);
 
         socket.on('serverPing', receivePing);

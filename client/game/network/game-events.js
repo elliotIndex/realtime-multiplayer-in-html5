@@ -1,8 +1,8 @@
 'use strict';
 
 const clientPrediction = require('./client-prediction');
-const Player = require('../../lib/Player');
-const Vector = require('../../lib/vector');
+const Player = require('../../../lib/Player');
+const Vector = require('../../../lib/vector');
 
 function networkGameEvents (game) {
     function onStartGame (data) {

@@ -1,9 +1,8 @@
 'use strict';
 
 const React = require('react');
-const Renderer = require('../view');
-const debugView = require('../view/debug');
-const DEBUG = true;
+const Renderer = require('../game/view');
+const Stats = require('./Stats');
 
 class Game extends React.Component {
     componentDidMount () {
@@ -14,22 +13,23 @@ class Game extends React.Component {
 
         const renderer = Renderer(ctx, this.props.gameClient.options);
 
-        if (DEBUG) {
-            debugView(this.props.gameClient);
-        }
-
         this.props.gameClient.start(renderer);
     }
 
     render () {
         return (
-            <canvas
-                ref="canvas"
-                className="game"
-                width={ this.props.width }
-                height={ this.props.height }
-            >
-            </canvas>
+            <div>
+                <canvas
+                    ref="canvas"
+                    className="game"
+                    width={ this.props.width }
+                    height={ this.props.height }
+                >
+                </canvas>
+                <Stats
+                    game={ this.props.gameClient }
+                />
+            </div>
         );
     }
 }

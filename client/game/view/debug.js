@@ -1,6 +1,6 @@
 'use strict';
 
-const dat = require('../../lib/dat-gui');
+const dat = require('../../../lib/dat-gui');
 
 function debugView (game) {
     const gui = new dat.GUI();

@@ -1,6 +1,6 @@
 'use strict';
 
-const Vector = require('../../lib/vector');
+const Vector = require('../../../lib/vector');
 
 function clientPrediction (game) {
     // The most recent server update

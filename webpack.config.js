@@ -3,7 +3,7 @@
 const path = require('path');
 
 module.exports = {
-    devtool: 'cheap-eval-source-map',
+    devtool: 'eval-source-map',
     entry: './client/index.js',
     output: {
         path: path.join(__dirname, 'dist'),
