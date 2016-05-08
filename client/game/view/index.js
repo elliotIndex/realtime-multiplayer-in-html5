@@ -10,7 +10,7 @@ function renderer (ctx, options = {}) {
             drawPlayer(ctx, player, {
                 color: '#c58242',
                 infoColor: '#cc8822',
-                stateText: (player === game.localPlayer ? 'YOU ' : '') + 'local_pos'
+                stateText: player.name + ' (local_pos)'
             });
 
             const ghosts = game.getGhosts(player.id);

@@ -52,7 +52,7 @@ class Room {
         client.currentRoom = this;
 
         if (this.gameStarted) {
-            const player = new Player(uuid.v4());
+            const player = new Player(uuid.v4(), client.name);
 
             this.game.addPlayer(player);
             this.network.addClientPlayer(client, player);
@@ -101,7 +101,7 @@ class Room {
 
     startGame () {
         for (const client of this.clients) {
-            const player = new Player(uuid.v4());
+            const player = new Player(uuid.v4(), client.name);
 
             this.game.addPlayer(player);
             this.network.addClientPlayer(client, player);
@@ -139,7 +139,13 @@ class Room {
     toJSON () {
         return {
             id: this.id,
-            size: this.size
+            size: this.size,
+            users: Array.from(this.clients).map(client => {
+                return {
+                    id: client.id,
+                    name: client.name
+                };
+            })
         };
     }
 }

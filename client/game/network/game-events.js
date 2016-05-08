@@ -15,14 +15,14 @@ function networkGameEvents (game) {
         game.clearPlayers();
 
         for (const playerData of data.players) {
-            const player = new Player(playerData.id);
+            const player = new Player(playerData.id, playerData.name);
 
             player.pos = Vector.copy(playerData.position);
 
             game.addPlayer(player);
         }
 
-        const localPlayer = new Player(data.ownPlayer.id);
+        const localPlayer = new Player(data.ownPlayer.id, data.ownPlayer.name);
 
         localPlayer.pos = Vector.copy(data.ownPlayer.position);
 
@@ -31,7 +31,7 @@ function networkGameEvents (game) {
     }
 
     function onPlayerJoined (playerData) {
-        const player = new Player(playerData.id);
+        const player = new Player(playerData.id, playerData.name);
 
         player.pos = Vector.copy(playerData.position);
 
