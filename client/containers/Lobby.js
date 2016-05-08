@@ -13,6 +13,7 @@ class Lobby extends React.Component {
 
         this.state = {
             socket: null,
+            user: null,
             rooms: [],
             currentRoomId: null,
             gameClient: null
@@ -32,6 +33,7 @@ class Lobby extends React.Component {
                 const gameClient = new GameClient(this.props.gameSettings, socket);
 
                 this.setState({
+                    user: data.user,
                     socket: socket,
                     rooms: data.rooms,
                     gameClient: gameClient
@@ -60,6 +62,10 @@ class Lobby extends React.Component {
                 this.setState({
                     currentRoomId: null
                 });
+            });
+
+            socket.emit('register', {
+                name: this.props.name
             });
         });
     }
@@ -104,6 +110,9 @@ class Lobby extends React.Component {
                         >
                             Logout
                         </button>
+
+                        { this.state.user ? this.state.user.name : null }
+
                         <RoomList
                             rooms={ this.state.rooms }
                             onRoomClick={ this.onJoinRoom.bind(this) }
@@ -135,6 +144,7 @@ class Lobby extends React.Component {
 
 Lobby.propTypes = {
     serverUrl: React.PropTypes.string.isRequired,
+    name: React.PropTypes.string.isRequired,
     onLobbyError: React.PropTypes.func.isRequired,
     logoutHandler: React.PropTypes.func.isRequired,
     gameSettings: React.PropTypes.object.isRequired,

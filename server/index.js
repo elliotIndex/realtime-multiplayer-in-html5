@@ -25,73 +25,76 @@ function start () {
     const gameServer = GameServer.create(config, clients);
 
     io.sockets.on('connection', function (socket) {
-        const client = new Client(socket);
+        socket.on('register', (data) => {
+            const client = new Client(socket, data.name);
 
-        clients.set(client.id, client);
+            clients.set(client.id, client);
 
-        client.on('clientPing', (data) => {
-            client.emit('serverPing', data);
-        });
+            client.on('clientPing', (data) => {
+                client.emit('serverPing', data);
+            });
 
-        client.emit('onConnected', {
-            rooms: Array.from(gameServer.rooms.values()).map(room => {
-                return room.toJSON();
-            })
-        });
+            client.emit('onConnected', {
+                user: client.toJSON(),
+                rooms: Array.from(gameServer.rooms.values()).map(room => {
+                    return room.toJSON();
+                })
+            });
 
-        client.on('joinRoom', (data) => {
-            const room = gameServer.rooms.get(data.roomId);
+            client.on('joinRoom', (data) => {
+                const room = gameServer.rooms.get(data.roomId);
 
-            if (room && !client.currentRoom) {
-                room.join(client);
+                if (room && !client.currentRoom) {
+                    room.join(client);
 
-                client.emit('onJoinedRoom', { room: room.toJSON() });
-            }
-        });
+                    client.emit('onJoinedRoom', { room: room.toJSON() });
+                }
+            });
 
-        client.on('leaveRoom', (data) => {
-            const room = gameServer.rooms.get(data.roomId);
+            client.on('leaveRoom', (data) => {
+                const room = gameServer.rooms.get(data.roomId);
 
-            if (room) {
-                room.leave(client);
+                if (room) {
+                    room.leave(client);
 
-                if (room.size === 0) {
-                    gameServer.endGame(room.id);
+                    if (room.size === 0) {
+                        gameServer.endGame(room.id);
+                    }
+
+                    client.emit('onLeftRoom', { room: room.toJSON() });
+                }
+            });
+
+            client.on('createRoom', () => {
+                gameServer.createGame(client);
+            });
+
+            log('\t socket.io:: player ' + client.id + ' connected');
+
+            client.on('message', (message) => {
+                gameServer.onMessage(client, message);
+            });
+
+            client.on('disconnect', function () {
+                log('\t socket.io:: client disconnected ' + client.id);
+
+                if (client.currentRoom) {
+                    if (client.currentRoom.size === 1) {
+                        gameServer.endGame(client.currentRoom.id);
+                    }
+
+                    client.emit('onLeftRoom', { room: client.currentRoom.toJSON() });
+
+                    client.currentRoom.leave(client);
                 }
 
-                client.emit('onLeftRoom', { room: room.toJSON() });
-            }
-        });
-
-        client.on('createRoom', () => {
-            gameServer.createGame(client);
-        });
-
-        log('\t socket.io:: player ' + client.id + ' connected');
-
-        client.on('message', (message) => {
-            gameServer.onMessage(client, message);
-        });
-
-        client.on('disconnect', function () {
-            log('\t socket.io:: client disconnected ' + client.id);
-
-            if (client.currentRoom) {
-                if (client.currentRoom.size === 1) {
-                    gameServer.endGame(client.currentRoom.id);
-                }
-
-                client.emit('onLeftRoom', { room: client.currentRoom.toJSON() });
-
-                client.currentRoom.leave(client);
-            }
-
-            clients.delete(client.id);
-        });
+                clients.delete(client.id);
+            });
 
 
-        client.on('error', (err) => {
-            log('Client error', err);
+            client.on('error', (err) => {
+                log('Client error', err);
+            });
         });
     });
 }

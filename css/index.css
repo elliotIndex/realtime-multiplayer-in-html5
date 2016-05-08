@@ -25,6 +25,12 @@ ul.horizontal-list  li:last-child {
     padding-right: 0;
 }
 
+ul.vertical-list {
+    list-style-type: none;
+    margin: 0;
+    padding: 0
+}
+
 .square-font {
     font-family: "courier", monospace;
     font-size: 80%;

@@ -15,6 +15,7 @@ class App extends React.Component {
         this.state = {
             loggedIn: false,
             serverUrl: null,
+            name: null,
             lobbyError: null,
             gameSettings: Object.assign({}, gameConfig, clientConfig)
         };
@@ -24,6 +25,7 @@ class App extends React.Component {
         this.setState({
             loggedIn: true,
             serverUrl: values.server,
+            name: values.name,
             lobbyError: null
         });
     }
@@ -61,6 +63,7 @@ class App extends React.Component {
                         <Lobby
                             gameSettings={ this.state.gameSettings }
                             serverUrl={ this.state.serverUrl }
+                            name={ this.state.name }
                             logoutHandler={ this.onLogout.bind(this) }
                             onLobbyError={ this.onLobbyError.bind(this) }
                         />

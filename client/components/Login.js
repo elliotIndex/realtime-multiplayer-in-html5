@@ -7,13 +7,14 @@ class Login extends React.Component {
         super(props);
 
         this.state = {
-            server: 'http://localhost:4004'
+            server: 'http://localhost:4004',
+            name: ''
         };
     }
 
-    handleServerChange (event) {
+    handleValueChange (event) {
         this.setState({
-            server: event.target.value
+            [event.target.name]: event.target.value
         });
     }
 
@@ -28,11 +29,21 @@ class Login extends React.Component {
                     } }
                 >
                     <label>
+                        Name
+                        <input
+                            type="text"
+                            name="name"
+                            value={ this.state.name }
+                            onChange={ this.handleValueChange.bind(this) }
+                        />
+                    </label>
+                    <label>
                         Server url
                         <input
                             type="text"
+                            name="server"
                             value={ this.state.server }
-                            onChange={ this.handleServerChange.bind(this) }
+                            onChange={ this.handleValueChange.bind(this) }
                         />
                     </label>
                     <input

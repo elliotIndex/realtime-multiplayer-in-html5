@@ -3,8 +3,9 @@
 const uuid = require('node-uuid');
 
 class Client {
-    constructor (socket) {
+    constructor (socket, name) {
         this.id = uuid.v1();
+        this.name = name;
         this.socket = socket;
         this.currentRoom = null;
     }
@@ -24,6 +25,7 @@ class Client {
     toJSON () {
         return {
             id: this.id,
+            name: this.name,
             currentRoom: this.currentRoom ? this.currentRoom.toJSON() : null
         };
     }

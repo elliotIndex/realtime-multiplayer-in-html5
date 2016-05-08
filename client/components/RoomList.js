@@ -14,7 +14,8 @@ class RoomList extends React.Component {
                         </button>
                     ) : (
                         <div>
-                            <ul>
+                            <h4>Rooms</h4>
+                            <ul className="vertical-list">
                                 { this.props.rooms.map((room, index) => {
                                     return (
                                         <li key={ index }>
