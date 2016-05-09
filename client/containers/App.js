@@ -51,9 +51,9 @@ class App extends React.Component {
 
     render () {
         return (
-            <div>
+            <div className="container mt-5 mb-5">
                 { this.state.lobbyError ? (
-                    <div>
+                    <div className="flash flash-error mb-5">
                         { this.state.lobbyError }
                     </div>
                     ) : null
@@ -74,13 +74,17 @@ class App extends React.Component {
                     )
                 }
 
-                { this.state.loggedIn ? (
-                        <Settings
-                            settingsChangeHandler={ this.onSettingsChange.bind(this) }
-                            defaultSettings={ clientConfig }
-                        />
-                    ) : null
-                }
+                <div className="columns">
+                    <div className="single-column">
+                        { this.state.loggedIn || true ? (
+                                <Settings
+                                    settingsChangeHandler={ this.onSettingsChange.bind(this) }
+                                    defaultSettings={ clientConfig }
+                                />
+                            ) : null
+                        }
+                    </div>
+                </div>
             </div>
         );
     }

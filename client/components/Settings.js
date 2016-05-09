@@ -37,58 +37,54 @@ class Settings extends React.Component {
 
     render () {
         return (
-            <form>
-                <h4>Settings</h4>
-                <ul className="horizontal-list square-font">
-                    <li>
+            <div className="menu">
+                <span className="menu-heading">Settings</span>
+                <form className="mr-3 ml-3">
+                    <div className="form-checkbox">
                         <label>
                             <input
                                 type="checkbox"
                                 name="naiveApproach"
                                 checked={ this.state.naiveApproach }
                                 onChange={ this.handleCheckboxChange.bind(this) }
-                            />
-                            Naive approach
+                            /> Use server position
                         </label>
-                    </li>
 
-                    <li>
+                    </div>
+
+                    <div className="form-checkbox">
                         <label>
                             <input
                                 type="checkbox"
                                 name="clientSmoothing"
                                 checked={ this.state.clientSmoothing }
                                 onChange={ this.handleCheckboxChange.bind(this) }
-                            />
-                            Client smoothing
+                            /> Client smoothing
                         </label>
-                    </li>
+                    </div>
 
-                    <li>
+                    <div className="form-checkbox">
                         <label>
                             <input
                                 type="checkbox"
                                 name="showServerPosition"
                                 checked={ this.state.showServerPosition }
                                 onChange={ this.handleCheckboxChange.bind(this) }
-                            />
-                            Show server position
+                            /> Show server position
                         </label>
-                    </li>
+                    </div>
 
-                    <li>
+                    <div className="form-checkbox">
                         <label>
                             <input
                                 type="checkbox"
                                 name="showDestinationPosition"
                                 checked={ this.state.showDestinationPosition }
                                 onChange={ this.handleCheckboxChange.bind(this) }
-                            />
-                            Show destination position
+                            /> Show destination position
                         </label>
-                    </li>
-
-                    <li>
+                    </div>
+                    <div className="form-checkbox">
                         <label>
                             <input
                                 type="checkbox"
@@ -98,37 +94,42 @@ class Settings extends React.Component {
                             />
                             Client prediction
                         </label>
-                    </li>
+                    </div>
 
-                    <li>
-                        <label>
-                            Network offset
-                            <input
-                                type="input"
+                    <dl>
+                        <dt><label>Network offset</label></dt>
+                        <dd>
+                            <select
+                                className="form-select select-sm"
                                 name="networkOffset"
-                                size={ 4 }
-                                maxlength={ 4 }
-                                value={ this.state.networkOffset }
+                                selected={ this.state.networkOffset }
                                 onChange={ this.handleValueChange.bind(this) }
-                            />
-                        </label>
-                    </li>
+                            >
+                                { [0, 50, 100, 200, 500, 1000, 2000].map(value => {
+                                    return (<option key={ value } value="value">{ value } ms</option>);
+                                }) }
+                            </select>
+                        </dd>
+                    </dl>
 
-                    <li>
-                        <label>
-                            Network buffer size
-                            <input
-                                type="input"
+
+                    <dl>
+                        <dt><label>Network buffer size</label></dt>
+                        <dd>
+                            <select
+                                className="form-select select-sm"
                                 name="networkBufferSize"
-                                size={ 4 }
-                                maxlength={ 4 }
-                                value={ this.state.networkBufferSize }
+                                selected={ this.state.networkBufferSize }
                                 onChange={ this.handleValueChange.bind(this) }
-                            />
-                        </label>
-                    </li>
-                </ul>
-            </form>
+                            >
+                                { [2, 4, 8].map(value => {
+                                    return (<option key={ value } value="value">{ value }</option>);
+                                }) }
+                            </select>
+                        </dd>
+                    </dl>
+                </form>
+            </div>
         );
     }
 }

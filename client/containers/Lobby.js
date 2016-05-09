@@ -103,16 +103,24 @@ class Lobby extends React.Component {
     render () {
         return (
             <div>
-                <div className="grid">
-                    <div className="col-2-12">
-                        <button
-                            onClick={ this.onLogout.bind(this) }
-                        >
-                            Logout
-                        </button>
+                <div className="columns">
+                    <div className="single-column">
+                        <div className="menu">
+                            <div className="menu-heading">
+                                Logged in: { this.props.name }
+                                <button
+                                    className="btn btn-sm btn-primary menu-btn"
+                                    onClick={ this.onLogout.bind(this) }
+                                >
+                                    Logout
+                                </button>
+                            </div>
+                        </div>
+                        </div>
+                </div>
 
-                        { this.state.user ? this.state.user.name : null }
-
+                <div className="columns">
+                    <div className="one-fourth column">
                         <RoomList
                             rooms={ this.state.rooms }
                             onRoomClick={ this.onJoinRoom.bind(this) }
@@ -121,19 +129,24 @@ class Lobby extends React.Component {
                             currentRoomId={ this.state.currentRoomId }
                         />
                     </div>
-                    <div className="col-10-12">
+                    <div className="three-fourths column">
                         { this.state.gameClient && this.state.currentRoomId ? (
-                                <div>
-                                    <Game
-                                        width={ this.props.gameSettings.world.width }
-                                        height={ this.props.gameSettings.world.height }
-                                        gameClient={ this.state.gameClient }
-                                    />
-                                    <Stats
-                                        game={ this.state.gameClient }
-                                    />
+                                    <div>
+                                        <div className="text-center">
+                                            <Game
+                                                width={ this.props.gameSettings.world.width }
+                                                height={ this.props.gameSettings.world.height }
+                                                gameClient={ this.state.gameClient }
+                                            />
+                                        </div>
+                                        <Stats
+                                            game={ this.state.gameClient }
+                                        />
+                                    </div>
+                                ) : (
+                                <div className="blankslate mb-5">
                                 </div>
-                            ) : null
+                            )
                         }
                     </div>
                 </div>

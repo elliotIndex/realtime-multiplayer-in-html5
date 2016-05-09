@@ -1,7 +1,7 @@
 'use strict';
 
-require('style!css!../css/index.css');
-require('style!css!../css/simplegrid.css');
+require('!style!css!sass!../scss/primer.scss');
+require('!style!css!sass!../scss/game.scss');
 
 const React = require('react');
 const ReactDOM = require('react-dom');

@@ -35,14 +35,19 @@ class Stats extends React.Component {
 
     render () {
         return (
-            <div>
-                <ul className="horizontal-list square-font">
-                    <li>Server time: { this.state.serverTime }</li>
-                    <li>Client time: { this.state.clientTime }</li>
-                    <li>Local time: { this.state.localTime }</li>
-                    <li>Network latency: { this.state.networkLatency }</li>
-                    <li>Network ping: { this.state.networkPing }</li>
-                </ul>
+            <div className="menu">
+                <div className="menu-heading">
+                    Stats
+                </div>
+                <div className="blankslate text-left">
+                    <ul>
+                        <li>Server time: { this.state.serverTime }</li>
+                        <li>Client time: { this.state.clientTime }</li>
+                        <li>Local time: { this.state.localTime }</li>
+                        <li>Network latency: { this.state.networkLatency }</li>
+                        <li>Network ping: { this.state.networkPing }</li>
+                    </ul>
+                </div>
             </div>
         );
     }

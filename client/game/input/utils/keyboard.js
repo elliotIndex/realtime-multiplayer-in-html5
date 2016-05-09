@@ -79,6 +79,11 @@ THREEx.KeyboardState.prototype._onKeyChange	= function (event, pressed)
     // log to debug
     // console.log("onKeyChange", event, pressed, event.keyCode, event.shiftKey, event.ctrlKey, event.altKey, event.metaKey)
 
+    // Space and arrow keys
+    if([32, 37, 38, 39, 40].indexOf(event.keyCode) > -1) {
+        event.preventDefault();
+    }
+
     // update this.keyCodes
     var keyCode		= event.keyCode;
     this.keyCodes[keyCode]	= pressed;

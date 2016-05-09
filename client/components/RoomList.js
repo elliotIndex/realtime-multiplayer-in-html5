@@ -7,33 +7,52 @@ class RoomList extends React.Component {
         return (
             <div>
                 { this.props.currentRoomId ? (
-                        <button
-                            onClick={ this.props.onRoomLeaveClick.bind(this, this.props.currentRoomId) }
-                        >
-                            Leave room
-                        </button>
+                    <div className="menu">
+                        <span className="menu-heading">Rooms
+                            <button
+                                className="btn btn-sm menu-btn"
+                                onClick={ this.props.onRoomLeaveClick.bind(this, this.props.currentRoomId) }
+                            >
+                                Leave room
+                            </button>
+                        </span>
+                        <span className="menu-item" >
+                            Room id: { this.props.currentRoomId }
+                        </span>
+                    </div>
                     ) : (
-                        <div>
-                            <h4>Rooms</h4>
-                            <ul className="vertical-list">
+                        <div className="menu">
+                            <span className="menu-heading">Rooms
+                                <button
+                                    className="btn btn-sm btn-primary menu-btn"
+                                    onClick={ this.props.onRoomCreateClick }
+                                >
+                                    Create room
+                                </button>
+                            </span>
                                 { this.props.rooms.map((room, index) => {
                                     return (
-                                        <li key={ index }>
-                                            <a onClick={ this.props.onRoomClick.bind(this, room) } >
+                                        <span className="menu-item" key={ index } >
+                                            <span
+                                                className="css-truncate"
+                                            >
                                                 { room.id }
-                                            </a>
-                                        </li>
+                                            </span>
+                                            <button
+                                                className="btn btn-sm menu-btn"
+                                                onClick={ this.props.onRoomClick.bind(this, room) }
+                                            >
+                                                Join
+                                            </button>
+                                        </span>
                                     );
                                 }) }
-                            </ul>
-                            <button
-                                onClick={ this.props.onRoomCreateClick }
-                            >
-                                Create room
-                            </button>
+
                         </div>
+
                     )
                 }
+
             </div>
         );
     }
