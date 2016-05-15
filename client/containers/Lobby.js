@@ -6,6 +6,7 @@ const RoomList = require('../components/RoomList');
 const Game = require('../components/Game');
 const GameClient = require('../game/GameClient');
 const Stats = require('../components/Stats');
+const debugMode = require('../debug').debugMode;
 
 class Lobby extends React.Component {
     constructor (props) {
@@ -68,6 +69,10 @@ class Lobby extends React.Component {
                 name: this.props.name
             });
         });
+
+        if (debugMode) {
+            this.onCreateRoom();
+        }
     }
 
     onJoinRoom (room) {

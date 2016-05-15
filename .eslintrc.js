@@ -105,7 +105,7 @@ module.exports = {
             "unix"
         ],
         "lines-around-comment": "error",
-        "max-depth": ["error", { "max": 4 }],
+        "max-depth": ["error", { "max": 6 }],
         "max-len": "off",
         "max-nested-callbacks": "error",
         "max-params": "off",
@@ -194,12 +194,12 @@ module.exports = {
             }
         ],
         "no-unmodified-loop-condition": "error",
-        "no-unneeded-ternary": [
-            "error",
-            {
-                "defaultAssignment": true
-            }
-        ],
+        // "no-unneeded-ternary": [
+        //     "error",
+        //     {
+        //         "defaultAssignment": true
+        //     }
+        // ],
         "no-unused-expressions": "error",
         "no-use-before-define": "error",
         "no-useless-call": "error",

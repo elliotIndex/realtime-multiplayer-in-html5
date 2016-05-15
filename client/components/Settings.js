@@ -9,6 +9,12 @@ class Settings extends React.Component {
         this.state = Object.assign({}, props.defaultSettings);
     }
 
+    handleNumberChange (event) {
+        this.setState({
+            [event.target.name]: Number.parseFloat(event.target.value)
+        });
+    }
+
     handleValueChange (event) {
         this.setState({
             [event.target.name]: event.target.value
@@ -103,10 +109,10 @@ class Settings extends React.Component {
                                 className="form-select select-sm"
                                 name="networkOffset"
                                 selected={ this.state.networkOffset }
-                                onChange={ this.handleValueChange.bind(this) }
+                                onChange={ this.handleNumberChange.bind(this) }
                             >
                                 { [0, 50, 100, 200, 500, 1000, 2000].map(value => {
-                                    return (<option key={ value } value="value">{ value } ms</option>);
+                                    return (<option key={ value } value={ value }>{ value } ms</option>);
                                 }) }
                             </select>
                         </dd>
@@ -120,7 +126,7 @@ class Settings extends React.Component {
                                 className="form-select select-sm"
                                 name="networkBufferSize"
                                 selected={ this.state.networkBufferSize }
-                                onChange={ this.handleValueChange.bind(this) }
+                                onChange={ this.handleNumberChange.bind(this) }
                             >
                                 { [2, 4, 8].map(value => {
                                     return (<option key={ value } value="value">{ value }</option>);

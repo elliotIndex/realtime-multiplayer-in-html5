@@ -4,11 +4,17 @@ const MainLoop = require('../lib/mainloop');
 const Vector = require('../lib/vector');
 const CollisionHandler = require('../lib/collision');
 const processInput = require('../lib/physics/process-input');
+const bulletSystem = require('../lib/bullet-system');
 
 class GameCore {
     constructor (options) {
         this.options = options;
         this.network = null;
+        this.bulletsFired = [];
+
+        this.bulletSystem = bulletSystem((bullet) => {
+            this.bulletsFired.push(bullet);
+        });
 
         this.local_time = 0;
 
@@ -43,6 +49,7 @@ class GameCore {
     }
 
     removePlayer (player) {
+        this.bulletSystem.removePlayer(player);
         this.players.delete(player);
     }
 
@@ -62,7 +69,7 @@ class GameCore {
         for (const player of this.players) {
             player.old_state.pos = Vector.copy(player.pos);
 
-            const newDir = processInput(player, delta);
+            const newDir = processInput(player, this.bulletSystem, delta);
 
             player.pos = Vector.add(player.old_state.pos, newDir);
 
@@ -70,6 +77,8 @@ class GameCore {
 
             this._collisionHandler.process(player);
         }
+
+        this.bulletSystem.update(delta);
     }
 }
 

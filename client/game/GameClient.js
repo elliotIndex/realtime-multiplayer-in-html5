@@ -7,6 +7,7 @@ const Vector = require('../../lib/vector');
 const fixedNumber = require('../../lib/fixed-number');
 const CollisionHandler = require('../../lib/collision');
 const processInput = require('../../lib/physics/process-input');
+const bulletSystem = require('../../lib/bullet-system');
 const processNetworkUpdates = require('./network/process-updates');
 
 class GameClient {
@@ -15,6 +16,7 @@ class GameClient {
         this.players = new Map();
         this.serverGhosts = new Map();
         this.localGhosts = new Map();
+        this.bulletSystem = bulletSystem();
 
         // A local timer for precision on client
         this.local_time = 0;
@@ -44,6 +46,7 @@ class GameClient {
             this._updateInput();
 
             this.updatePhysics(delta);
+            this.bulletSystem.update(delta);
 
             if (this.localPlayer) {
                 this._collisionHandler.process(this.localPlayer);
@@ -103,7 +106,7 @@ class GameClient {
 
                 player.old_state.pos = Vector.copy(player.cur_state.pos);
 
-                const newDir = processInput(player, delta);
+                const newDir = processInput(player, this.bulletSystem, delta);
 
                 player.cur_state.pos = Vector.add(player.old_state.pos, newDir);
 
@@ -113,6 +116,10 @@ class GameClient {
                 player.pos = player.cur_state.pos;
             }
         }
+    }
+
+    get bullets () {
+        return this.bulletSystem.bullets;
     }
 
     _updateInput () {
@@ -172,6 +179,7 @@ class GameClient {
     }
 
     removePlayer (playerId) {
+        this.bulletSystem.removePlayer(this.players.get(playerId));
         this.players.delete(playerId);
         this.localGhosts.delete(playerId);
         this.serverGhosts.delete(playerId);

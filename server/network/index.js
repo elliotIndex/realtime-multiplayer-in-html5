@@ -27,13 +27,23 @@ function network () {
                         ownPlayer: player.toJSON(),
                         players: Array.from(game.players.values()).filter(p => {
                             return p !== player;
+                        }),
+                        bullets: game.bulletsFired.filter((bullet) => {
+                            return bullet.firedBy !== player;
+                        }).map((bullet) => {
+                            return Object.assign({}, bullet, {
+                                firedBy: bullet.firedBy.id
+                            });
                         })
                     };
 
                     playerClients.get(player).emit('onserverupdate', state);
+
                 }
             }
         }
+
+        game.bulletsFired = [];
     }
 
     function receiveClientInput (client, input, inputTime, inputSeq) {

@@ -4,6 +4,7 @@ const React = require('react');
 const Login = require('../components/Login');
 const Settings = require('../components/Settings');
 const Lobby = require('./Lobby');
+const debugMode = require('../debug').debugMode;
 
 const clientConfig = require('./../client-config');
 const gameConfig = require('../../lib/game-config');
@@ -12,13 +13,23 @@ class App extends React.Component {
     constructor (props) {
         super(props);
 
-        this.state = {
-            loggedIn: false,
-            serverUrl: null,
-            name: null,
-            lobbyError: null,
-            gameSettings: Object.assign({}, gameConfig, clientConfig)
-        };
+        if (debugMode) {
+            this.state = {
+                loggedIn: true,
+                serverUrl: 'http://localhost:4004',
+                name: 'arrr' + Math.random(),
+                lobbyError: null,
+                gameSettings: Object.assign({}, gameConfig, clientConfig)
+            };
+        } else {
+            this.state = {
+                loggedIn: false,
+                serverUrl: null,
+                name: null,
+                lobbyError: null,
+                gameSettings: Object.assign({}, gameConfig, clientConfig)
+            };
+        }
     }
 
     onLogin (values) {

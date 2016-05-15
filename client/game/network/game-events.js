@@ -63,6 +63,15 @@ function networkGameEvents (game) {
 
                 player.pos = Vector.copy(playerData.position);
             }
+
+            for (const bullet of data.bullets) {
+                const player = game.getPlayerById(bullet.firedBy);
+
+                game.bulletSystem.addBullet(player, Object.assign({}, bullet, {
+                    x: player.position.x,
+                    y: player.position.y
+                }));
+            }
         } else {
             // Cache the data from the server,
             // and then play the timeline

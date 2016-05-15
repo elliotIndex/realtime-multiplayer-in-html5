@@ -24,6 +24,10 @@ function inputHandler () {
             input.push('u');
         }
 
+        if (keyboard.pressed('space')) {
+            input.push('f');
+        }
+
         return input;
     }
 

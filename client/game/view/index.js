@@ -1,6 +1,7 @@
 'use strict';
 
 const drawPlayer = require('./player');
+const drawBullets = require('./bullets');
 
 function renderer (ctx, options = {}) {
     function draw (game) {
@@ -36,6 +37,8 @@ function renderer (ctx, options = {}) {
                 }), ghostOptions);
             }
         }
+
+        drawBullets(ctx, game.bullets);
     }
 
     return {
