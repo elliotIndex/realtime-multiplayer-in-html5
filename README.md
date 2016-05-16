@@ -16,9 +16,12 @@ New functionality compared to the original:
 
 Changes compared to the original:
 * Fake lag removed. (For simplicity reasons, maybe this should be added again?)
+* Removed color changing.
 * Removed dat.gui for setting options. Uses a React component instead.
 * Moved help view to a React component. 
 * Show debug stats in React component instead of in the game.
+
+View the demo of the client [here](http://realtime-multiplayer.arjanfrans.com/). You must start a server yourself and connect to it! 
 
 ## Usage
 
