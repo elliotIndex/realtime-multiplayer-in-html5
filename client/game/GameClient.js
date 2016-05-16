@@ -83,11 +83,6 @@ class GameClient {
         });
 
         this._network.listen(this);
-
-        // Ping the server
-        setInterval(() => {
-            this._network.ping();
-        }, this.options.pingTimeout || 1000);
     }
 
     addAfterViewLoopHook (name, hook) {

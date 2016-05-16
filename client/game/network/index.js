@@ -17,8 +17,17 @@ function network (game, socket) {
         socket.emit('clientPing', previousPing);
     }
 
+    const pingInterval = setInterval(() => {
+        // Ping the server
+        ping();
+    }, game.options.pingTimeout || 1000);
+
     function listen () {
         const gameEvents = NetworkGameEvents(game, socket);
+
+        socket.on('disconnect', () => {
+            clearInterval(pingInterval);
+        });
 
         socket.on('serverPing', receivePing);
 

@@ -70,6 +70,8 @@ class GameCore {
         this._physicsLoop.stop();
         this._networkLoop.stop();
         this._timer.stop();
+        this.bulletsFired = [];
+        this.eventsFired = [];
     }
 
     updatePhysics (delta) {
