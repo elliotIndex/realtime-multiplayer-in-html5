@@ -168,7 +168,7 @@ module.exports = {
                 "allowForLoopAfterthoughts": true
             }
         ],
-        "no-process-env": "error",
+        // "no-process-env": "error",
         "no-process-exit": "off",
         "no-proto": "error",
         "no-restricted-globals": "error",

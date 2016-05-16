@@ -1,9 +1,11 @@
 'use strict';
 
 const path = require('path');
+const webpack = require('webpack');
+const env = process.env.NODE_ENV;
 
-module.exports = {
-    devtool: 'eval-source-map',
+const config = {
+    devtool: 'cheap-module-source-map',
     entry: './client/index.js',
     output: {
         path: path.join(__dirname, 'dist'),
@@ -28,7 +30,25 @@ module.exports = {
             }
         ]
     },
+
     sassLoader: {
         includePaths: [path.resolve(__dirname, './scss')]
     }
 };
+
+if (env === 'production') {
+    config.plugins = [
+        new webpack.DefinePlugin({
+            'process.env': {
+                NODE_ENV: JSON.stringify('production')
+            }
+        }),
+        new webpack.optimize.UglifyJsPlugin({
+            compress: {
+                warnings: true
+            }
+        })
+    ];
+}
+
+module.exports = config;

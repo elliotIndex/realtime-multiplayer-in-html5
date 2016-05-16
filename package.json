@@ -7,7 +7,7 @@
     "start": "nodemon ./server/index.js",
     "client": "webpack-dev-server --colors --inline",
     "deploy": "./deploy.sh",
-    "build": "webpack --optimize-minimize",
+    "build": "NODE_ENV=production webpack",
     "lint": "eslint lib"
   },
   "license": "MIT",
