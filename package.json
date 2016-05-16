@@ -1,6 +1,6 @@
 {
   "name": "realtime-multiplayer-in-html5",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Realtime multiplayer in the browser",
   "author": "Arjan Frans <arjanfrans.com@gmail.com>",
   "scripts": {
