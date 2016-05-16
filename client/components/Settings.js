@@ -43,8 +43,7 @@ class Settings extends React.Component {
 
     render () {
         return (
-            <div className="menu">
-                <span className="menu-heading">Settings</span>
+            <div className="border-left border">
                 <form className="mr-3 ml-3">
                     <div className="form-checkbox">
                         <label>

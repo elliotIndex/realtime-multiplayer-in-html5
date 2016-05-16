@@ -5,15 +5,20 @@ const Vector = require('../lib/vector');
 const CollisionHandler = require('../lib/collision');
 const processInput = require('../lib/physics/process-input');
 const bulletSystem = require('../lib/bullet-system');
+const EventSystem = require('../lib/events/event-system');
 
 class GameCore {
     constructor (options) {
         this.options = options;
         this.network = null;
         this.bulletsFired = [];
+        this.eventsFired = [];
 
         this.bulletSystem = bulletSystem((bullet) => {
             this.bulletsFired.push(bullet);
+        });
+        this.eventSystem = EventSystem((event) => {
+            this.eventsFired.push(event);
         });
 
         this.local_time = 0;
@@ -30,7 +35,9 @@ class GameCore {
 
         this._physicsLoop = MainLoop.create().setSimulationTimestep(options.simulationTimestemp);
         this._physicsLoop.setUpdate((delta) => {
+            this.eventSystem.update(delta);
             this.updatePhysics(delta);
+            this.bulletSystem.update(delta);
         });
 
         this._networkLoop = MainLoop.create().setSimulationTimestep(options.networkTimestep).setUpdate(updateNetwork);
@@ -69,7 +76,7 @@ class GameCore {
         for (const player of this.players) {
             player.old_state.pos = Vector.copy(player.pos);
 
-            const newDir = processInput(player, this.bulletSystem, delta);
+            const newDir = processInput(player, this, delta);
 
             player.pos = Vector.add(player.old_state.pos, newDir);
 
@@ -77,8 +84,6 @@ class GameCore {
 
             this._collisionHandler.process(player);
         }
-
-        this.bulletSystem.update(delta);
     }
 }
 

@@ -8,6 +8,7 @@ const fixedNumber = require('../../lib/fixed-number');
 const CollisionHandler = require('../../lib/collision');
 const processInput = require('../../lib/physics/process-input');
 const bulletSystem = require('../../lib/bullet-system');
+const EventSystem = require('../../lib/events/event-system');
 const processNetworkUpdates = require('./network/process-updates');
 
 class GameClient {
@@ -17,6 +18,7 @@ class GameClient {
         this.serverGhosts = new Map();
         this.localGhosts = new Map();
         this.bulletSystem = bulletSystem();
+        this.eventSystem = EventSystem();
 
         // A local timer for precision on client
         this.local_time = 0;
@@ -45,6 +47,7 @@ class GameClient {
         const updateLogic = (delta) => {
             this._updateInput();
 
+            this.eventSystem.update(delta);
             this.updatePhysics(delta);
             this.bulletSystem.update(delta);
 
@@ -106,7 +109,7 @@ class GameClient {
 
                 player.old_state.pos = Vector.copy(player.cur_state.pos);
 
-                const newDir = processInput(player, this.bulletSystem, delta);
+                const newDir = processInput(player, this, delta);
 
                 player.cur_state.pos = Vector.add(player.old_state.pos, newDir);
 

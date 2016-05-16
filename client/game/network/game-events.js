@@ -3,6 +3,7 @@
 const clientPrediction = require('./client-prediction');
 const Player = require('../../../lib/Player');
 const Vector = require('../../../lib/vector');
+const parseGameEvent = require('../../../lib/events/parse-game-events');
 
 function networkGameEvents (game) {
     function onStartGame (data) {
@@ -71,6 +72,16 @@ function networkGameEvents (game) {
                     x: player.position.x,
                     y: player.position.y
                 }));
+            }
+
+            for (const eventData of data.events) {
+                const player = game.getPlayerById(eventData.firedBy);
+
+                parseGameEvent(game, {
+                    id: eventData.id,
+                    firedBy: player,
+                    name: eventData.name
+                });
             }
         } else {
             // Cache the data from the server,

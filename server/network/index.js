@@ -34,16 +34,25 @@ function network () {
                             return Object.assign({}, bullet, {
                                 firedBy: bullet.firedBy.id
                             });
+                        }),
+                        events: game.eventsFired.filter((event) => {
+                            return event.firedBy !== player;
+                        }).map((event) => {
+                            return {
+                                id: event.id,
+                                name: event.name,
+                                firedBy: event.firedBy.id
+                            };
                         })
                     };
 
                     playerClients.get(player).emit('onserverupdate', state);
-
                 }
             }
         }
 
         game.bulletsFired = [];
+        game.eventsFired = [];
     }
 
     function receiveClientInput (client, input, inputTime, inputSeq) {

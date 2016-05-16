@@ -2,10 +2,15 @@
 
 const COLOR = 'rgba(255,255,255,0.1)';
 const INFO_COLOR = 'rgba(255,255,255,0.1)';
+const RELOAD_COLOR = '#660000';
 
 function draw (ctx, player, options = {}) {
     // Set the color for this player
-    ctx.fillStyle = options.color || COLOR;
+    if (player.isReloading) {
+        ctx.fillStyle = RELOAD_COLOR;
+    } else {
+        ctx.fillStyle = options.color || COLOR;
+    }
 
     // Draw a rectangle for us
     const x = player.position.x - (player.height / 2);

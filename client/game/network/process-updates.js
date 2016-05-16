@@ -2,6 +2,7 @@
 
 const Vector = require('../../../lib/vector');
 const fixedNumber = require('../../../lib/fixed-number');
+const parseGameEvent = require('../../../lib/events/parse-game-events')
 
 function processNetworkUpdates (game, interpolation) {
     // No updates
@@ -107,6 +108,16 @@ function processNetworkUpdates (game, interpolation) {
                 y: player.position.y
             }));
         }
+
+        for (const eventData of target.events) {
+            const player = game.getPlayerById(eventData.firedBy);
+
+            parseGameEvent(game, {
+                id: eventData.id,
+                firedBy: player,
+                name: eventData.name
+            });
+        }
     }
 
     // Now, if not predicting client movement , we will maintain the local player position
@@ -142,6 +153,16 @@ function processNetworkUpdates (game, interpolation) {
                 x: player.position.x,
                 y: player.position.y
             }));
+        }
+
+        for (const eventData of latest_server_data.events) {
+            const player = game.getPlayerById(eventData.firedBy);
+
+            parseGameEvent(game, {
+                id: eventData.id,
+                firedBy: player,
+                name: eventData.name
+            });
         }
     }
 }

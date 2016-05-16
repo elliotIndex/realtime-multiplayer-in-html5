@@ -6,29 +6,33 @@ function inputHandler () {
     const keyboard = new KeyboardState();
 
     function getInput () {
-        const input = [];
+        const inputs = [];
 
         if (keyboard.pressed('A') || keyboard.pressed('left')) {
-            input.push('l');
+            inputs.push('l');
         }
 
         if (keyboard.pressed('D') || keyboard.pressed('right')) {
-            input.push('r');
+            inputs.push('r');
         }
 
         if (keyboard.pressed('S') || keyboard.pressed('down')) {
-            input.push('d');
+            inputs.push('d');
         }
 
         if (keyboard.pressed('W') || keyboard.pressed('up')) {
-            input.push('u');
+            inputs.push('u');
         }
 
         if (keyboard.pressed('space')) {
-            input.push('f');
+            inputs.push('f');
         }
 
-        return input;
+        if (keyboard.pressed('R')) {
+            inputs.push('re');
+        }
+
+        return inputs;
     }
 
     return {
