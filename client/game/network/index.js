@@ -30,12 +30,13 @@ function Network ({ game, socket, pingTimeout }) {
                 game.removePlayer(player.getId());
             }
         }
+
+        game.stop();
     }
 
     function onStartGame (data) {
         const serverTime = data.serverTime;
 
-        console.log(data)
         game.setTime(serverTime + netLatency);
 
         console.log('server time is about ' + game.getServerTime());
