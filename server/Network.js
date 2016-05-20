@@ -33,12 +33,12 @@ function network () {
                         });
                     }),
                     events: eventsFired.filter((event) => {
-                        return event.firedBy !== player;
+                        return event.getFiredBy() !== player;
                     }).map((event) => {
                         return {
-                            id: event.id,
-                            name: event.name,
-                            firedBy: event.firedBy.getId()
+                            id: event.getId(),
+                            name: event.getName(),
+                            firedBy: event.getFiredBy().getId()
                         };
                     })
                 };

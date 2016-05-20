@@ -107,11 +107,16 @@ class Settings extends React.Component {
                             <select
                                 className="form-select select-sm"
                                 name="networkOffset"
-                                selected={ this.state.networkOffset }
+                                value={ this.state.networkOffset }
                                 onChange={ this.handleNumberChange.bind(this) }
                             >
                                 { [0, 50, 100, 200, 500, 1000, 2000].map(value => {
-                                    return (<option key={ value } value={ value }>{ value } ms</option>);
+                                    return (
+                                        <option
+                                            key={ value }
+                                            value={ value }
+                                        >{ value } ms</option>
+                                    );
                                 }) }
                             </select>
                         </dd>

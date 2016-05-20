@@ -1,13 +1,13 @@
 'use strict';
 
-const MainLoop = require('../lib/mainloop');
-const Vector = require('../lib/vector');
-const CollisionHandler = require('../lib/collision');
-const GameNetwork = require('./network');
+const MainLoop = require('mainloop.js');
+const CollisionSystem = require('../lib/CollisionSystem');
+const GameNetwork = require('./Network');
 const processInput = require('../lib/physics/process-input');
 const BulletSystem = require('../lib/BulletSystem');
 const EventSystem = require('../lib/events/EventSystem');
 const protectObject = require('../lib/protect-object');
+const parseGameEvent = require('../lib/events/parse-game-events');
 
 function ServerGame ({ options }) {
     const players = new Set();
@@ -30,10 +30,17 @@ function ServerGame ({ options }) {
         }
     });
 
-    const collisionHandler = CollisionHandler(options.world);
-    const physicsLoop = MainLoop.create();
-    const networkLoop = MainLoop.create();
-    const timerLoop = MainLoop.create();
+    const collisionSystem = CollisionSystem.create({ world: options.world });
+
+    const physicsLoop = MainLoop.create({
+        simulationTimestep: options.simulationTimestep
+    });
+    const networkLoop = MainLoop.create({
+        simulationTimestep: options.networkTimestep
+    });
+    const timerLoop = MainLoop.create({
+        simulationTimestep: options.timerFrequency
+    });
 
     function isStarted () {
         return started;
@@ -58,10 +65,12 @@ function ServerGame ({ options }) {
         player.setSpeed(options.playerSpeed);
 
         players.add(player);
+        collisionSystem.addPlayer(player);
     }
 
     function removePlayer (player) {
         bulletSystem.removePlayer(player);
+        collisionSystem.removePlayer(player);
         players.delete(player);
     }
 
@@ -90,32 +99,40 @@ function ServerGame ({ options }) {
                 position: player.getPosition()
             });
 
-            const newDir = processInput(player, { bulletSystem, eventSystem }, delta);
-
-            const { x, y } = Vector.add(player.getPosition(), newDir);
-
-            player.setPosition(x, y);
-
-            collisionHandler.process(player);
-
-            player.clearInputs();
+            player.update(delta, () => {
+                bulletSystem.fireBullet(player);
+            }, (eventName) => {
+                if (eventName === 'reload' && !player.isReloading()) {
+                    parseGameEvent(eventSystem.dispatch, {
+                        firedBy: player,
+                        name: 'reload'
+                    });
+                }
+            });
         }
     }
 
-    physicsLoop.setSimulationTimestep(options.simulationTimestemp).setUpdate((delta) => {
+    physicsLoop.setUpdate((delta) => {
         eventSystem.update(delta);
         updatePhysics(delta);
+        collisionSystem.update(delta);
         bulletSystem.update(delta);
     });
 
-    networkLoop.setSimulationTimestep(options.networkTimestep).setUpdate(() => {
+    physicsLoop.setEnd(() => {
+        for (const player of players.values()) {
+            player.clearInputs();
+        }
+    });
+
+    networkLoop.setUpdate(() => {
         network.sendUpdates({ players, bulletsFired, eventsFired, time });
 
         bulletsFired = [];
         eventsFired = [];
     });
 
-    timerLoop.setSimulationTimestep(options.timerFrequency).setUpdate((delta) => {
+    timerLoop.setUpdate((delta) => {
         time += delta / 1000;
     });
 

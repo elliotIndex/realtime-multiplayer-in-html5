@@ -1,16 +1,33 @@
 'use strict';
 
-const MainLoop = require('../../lib/mainloop');
+const MainLoop = require('mainloop.js');
 const InputHandler = require('./input');
-const Vector = require('../../lib/vector');
-const fixedNumber = require('../../lib/fixed-number');
-const CollisionHandler = require('../../lib/collision');
-const processInput = require('../../lib/physics/process-input');
+const CollisionSystem = require('../../lib/CollisionSystem');
 const BulletSystem = require('../../lib/BulletSystem');
 const EventSystem = require('../../lib/events/EventSystem');
 const parseGameEvent = require('../../lib/events/parse-game-events');
 const protectObject = require('../../lib/protect-object');
 const Ghost = require('./ClientPlayer');
+
+function addVector (a, b) {
+    return {
+        x: a.x + b.x,
+        y: a.y + b.y
+    };
+}
+
+function interpolate (p, n, interpolation) {
+    interpolation = Math.max(0, Math.min(1, interpolation));
+
+    return p + interpolation * (n - p);
+}
+
+function lerp (a, b, interpolation) {
+    return {
+        x: interpolate(a.x, b.x, interpolation),
+        y: interpolate(a.y, b.y, interpolation)
+    };
+}
 
 function ClientGame ({ options }) {
     const players = new Map();
@@ -19,7 +36,7 @@ function ClientGame ({ options }) {
     const bulletSystem = BulletSystem.create();
     const eventSystem = EventSystem.create();
     const inputHandler = InputHandler();
-    const collisionHandler = CollisionHandler(options.world);
+    const collisionSystem = CollisionSystem.create({ world: options.world });
 
     let network = null;
     let renderer = null;
@@ -36,8 +53,12 @@ function ClientGame ({ options }) {
 
     const afterViewLoopHooks = {};
 
-    const physicsLoop = MainLoop.create();
-    const timerLoop = MainLoop.create();
+    const physicsLoop = MainLoop.create({
+        simulationTimestep: options.simulationTimestep
+    });
+    const timerLoop = MainLoop.create({
+        simulationTimestep: options.timerFrequency
+    });
 
     function addAfterViewLoopHook (name, hook) {
         afterViewLoopHooks[name] = hook;
@@ -67,13 +88,22 @@ function ClientGame ({ options }) {
 
     function removePlayer (playerId) {
         bulletSystem.removePlayer(players.get(playerId));
+        collisionSystem.removePlayer(players.get(playerId));
         players.delete(playerId);
         localGhosts.delete(playerId);
         serverGhosts.delete(playerId);
     }
 
     function setLocalPlayer (player) {
+        if (localPlayer) {
+            collisionSystem.removePlayer(localPlayer);
+            eventSystem.removePlayer(localPlayer);
+            bulletSystem.removePlayer(localPlayer);
+        }
+
         localPlayer = player;
+
+        collisionSystem.addPlayer(localPlayer);
     }
 
     function getPlayerById (id) {
@@ -142,17 +172,16 @@ function ClientGame ({ options }) {
                     position: player.getPosition()
                 });
 
-                const newDir = processInput(player, {
-                    bulletSystem,
-                    eventSystem
-                }, delta);
-
-                const { x, y } = Vector.add(player.getPosition(), newDir);
-
-                // When we are doing client side prediction, we smooth out our position
-                // across frames using local input states we have stored.
-                // Make sure the visual position matches the states we have stored
-                player.setPosition(x, y);
+                player.update(delta, () => {
+                    bulletSystem.fireBullet(player);
+                }, (eventName) => {
+                    if (eventName === 'reload' && !player.isReloading()) {
+                        parseGameEvent(eventSystem.dispatch, {
+                            firedBy: player,
+                            name: 'reload'
+                        });
+                    }
+                });
             }
         }
     }
@@ -167,7 +196,7 @@ function ClientGame ({ options }) {
             // Store the input state as a snapshot of what happened.
             localPlayer.pushInput({
                 inputs: input,
-                time: fixedNumber(time, 3),
+                time,
                 seq: inputSeq
             });
 
@@ -287,12 +316,15 @@ function ClientGame ({ options }) {
                 if (localPlayer) {
                     clientPrediction();
 
-                    const delta = options.simulationTimestemp;
+                    const delta = options.simulationTimestep;
 
                     // Now we reapply all the inputs that we have locally that
                     // the server hasn't yet confirmed. This will 'keep' our position the same,
                     // but also confirm the server position at the same time.
                     updatePhysics(delta);
+                    collisionSystem.update(delta);
+                    bulletSystem.update(delta);
+                    eventSystem.update(delta);
                 }
             }
         }
@@ -342,8 +374,8 @@ function ClientGame ({ options }) {
         }
 
         const difference = target.serverTime - clientTime;
-        const max_difference = fixedNumber(target.serverTime - previous.serverTime, 3);
-        let timePoint = fixedNumber(difference / max_difference, 3);
+        const max_difference = target.serverTime - previous.serverTime;
+        let timePoint = difference / max_difference;
 
         // Because we use the same target and previous in extreme cases
         // It is possible to get incorrect values due to division by 0 difference and such.
@@ -371,12 +403,12 @@ function ClientGame ({ options }) {
                     // to the target from the previous point in the server_updates buffer
                     ghosts.server.setPosition(serverPosition.x, serverPosition.y);
 
-                    const localGhostPosition = Vector.lerp(previousPosition, targetPosition, timePoint);
+                    const localGhostPosition = lerp(previousPosition, targetPosition, timePoint);
 
                     ghosts.local.setPosition(localGhostPosition.x, localGhostPosition.y);
 
                     if (options.clientSmoothing) {
-                        const { x, y } = Vector.lerp(player.getPosition(), ghosts.local.getPosition(), interpolation);
+                        const { x, y } = lerp(player.getPosition(), ghosts.local.getPosition(), interpolation);
 
                         player.setPosition(x, y);
                     } else {
@@ -398,7 +430,7 @@ function ClientGame ({ options }) {
                     for (const eventData of target.events) {
                         const player = players.get(eventData.firedBy);
 
-                        parseGameEvent(eventSystem, {
+                        parseGameEvent(eventSystem.dispatch, {
                             id: eventData.id,
                             firedBy: player,
                             name: eventData.name
@@ -420,11 +452,11 @@ function ClientGame ({ options }) {
             // Snap the ghost to the new server position
             ghosts.server.setPosition(latestServerUpdate.ownPlayer.position.x, latestServerUpdate.ownPlayer.position.y);
 
-            const local_target = Vector.lerp(my_past_pos, my_target_pos, timePoint);
+            const local_target = lerp(my_past_pos, my_target_pos, timePoint);
 
             // Smoothly follow the destination position
             if (options.clientSmoothing) {
-                const { x, y } = Vector.lerp(localPlayer.getPosition(), local_target, interpolation);
+                const { x, y } = lerp(localPlayer.getPosition(), local_target, interpolation);
 
                 localPlayer.setPosition(x, y);
             } else {
@@ -444,7 +476,7 @@ function ClientGame ({ options }) {
             for (const eventData of latestServerUpdate.events) {
                 const player = getPlayerById(eventData.firedBy);
 
-                parseGameEvent(eventSystem, {
+                parseGameEvent(eventSystem.dispatch, {
                     id: eventData.id,
                     firedBy: player,
                     name: eventData.name
@@ -457,19 +489,18 @@ function ClientGame ({ options }) {
         network = value;
     }
 
-    physicsLoop.setSimulationTimestep(options.simulationTimestemp).setUpdate((delta) => {
+    physicsLoop.setUpdate((delta) => {
         updateInput();
 
         eventSystem.update(delta);
         updatePhysics(delta);
         bulletSystem.update(delta);
-
-        if (localPlayer) {
-            collisionHandler.process(localPlayer);
-        }
+        collisionSystem.update(delta);
 
         time += delta / 1000;
-    }).setDraw((interpolation) => {
+    });
+
+    physicsLoop.setDraw((interpolation) => {
         if (!options.naiveApproach && serverUpdates.length > 0) {
             // Network player just gets drawn normally, with interpolation from
             // the server updates, smoothing out the positions from the past.
@@ -491,7 +522,13 @@ function ClientGame ({ options }) {
         }
     });
 
-    timerLoop.setSimulationTimestep(options.timerFrequency).setUpdate((delta) => {
+    physicsLoop.setEnd(() => {
+        for (const player of players.values()) {
+            player.clearInputs();
+        }
+    })
+
+    timerLoop.setUpdate((delta) => {
         time += delta / 1000;
     });
 

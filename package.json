@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "debug": "^2.2.0",
+    "mainloop.js": "git+https://github.com/arjanfrans/MainLoop.js.git",
     "node-uuid": "^1.4.7",
     "react": "^15.0.2",
     "react-dom": "^15.0.2",
