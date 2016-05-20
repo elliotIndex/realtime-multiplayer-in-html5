@@ -18,13 +18,13 @@ class Stats extends React.Component {
     componentWillMount () {
         const game = this.props.game;
 
-        game.addAfterViewLoopHook('stats', () => {
+        game.addAfterViewLoopHook('stats', (data) => {
             this.setState({
-                serverTime: game.server_time.toFixed(3),
-                clientTime: game.client_time.toFixed(3),
-                localTime: game.local_time.toFixed(3),
-                networkLatency: game._network.netLatency,
-                networkPing: game._network.netPing
+                serverTime: data.serverTime.toFixed(3),
+                clientTime: data.clientTime.toFixed(3),
+                localTime: data.time.toFixed(3),
+                networkLatency: data.netLatency,
+                networkPing: data.netPing
             });
         });
     }

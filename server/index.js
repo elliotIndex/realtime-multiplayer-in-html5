@@ -26,9 +26,12 @@ function start () {
 
     io.sockets.on('connection', function (socket) {
         socket.on('register', (data) => {
-            const client = new Client(socket, data.name);
+            const client = Client.create({
+                name: data.name,
+                socket
+            });
 
-            clients.set(client.id, client);
+            clients.set(client.getId(), client);
 
             client.on('clientPing', (data) => {
                 client.emit('serverPing', data);
@@ -44,10 +47,13 @@ function start () {
             client.on('joinRoom', (data) => {
                 const room = gameServer.rooms.get(data.roomId);
 
-                if (room && !client.currentRoom) {
+                if (room && !client.isInRoom()) {
                     room.join(client);
+                    client.setCurrentRoom(room);
 
                     client.emit('onJoinedRoom', { room: room.toJSON() });
+
+                    log('client joined room');
                 }
             });
 
@@ -56,6 +62,7 @@ function start () {
 
                 if (room) {
                     room.leave(client);
+                    client.setCurrentRoom(null);
 
                     if (room.size === 0) {
                         gameServer.endGame(room.id);
@@ -69,26 +76,29 @@ function start () {
                 gameServer.createGame(client);
             });
 
-            log('\t socket.io:: player ' + client.id + ' connected');
+            log('\t socket.io:: player ' + client.getId() + ' connected');
 
             client.on('message', (message) => {
                 gameServer.onMessage(client, message);
             });
 
             client.on('disconnect', function () {
-                log('\t socket.io:: client disconnected ' + client.id);
+                log('\t socket.io:: client disconnected ' + client.getId());
 
-                if (client.currentRoom) {
-                    if (client.currentRoom.size === 1) {
-                        gameServer.endGame(client.currentRoom.id);
+                const room = client.getCurrentRoom();
+
+                if (room) {
+                    if (room.size === 1) {
+                        gameServer.endGame(room.id);
                     }
 
-                    client.emit('onLeftRoom', { room: client.currentRoom.toJSON() });
+                    client.emit('onLeftRoom', { room: room.toJSON() });
 
-                    client.currentRoom.leave(client);
+                    room.leave(client);
+                    client.setCurrentRoom(null);
                 }
 
-                clients.delete(client.id);
+                clients.delete(client.getId());
             });
 
 

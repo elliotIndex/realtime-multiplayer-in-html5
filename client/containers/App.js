@@ -114,14 +114,12 @@ class App extends React.Component {
                         <div className="tabnav mb-0 border-bottom-0">
                             <div className="tabnav-tabs">
                                 <a
-                                    href="#"
                                     className={ 'tabnav-tab' + (this.state.selectedTab === 'help' ? ' selected' : '') }
                                     onClick={ this.onSelectedTab('help').bind(this) }
                                 >
                                     Help
                                 </a>
                                 <a
-                                    href="#"
                                     className={ 'tabnav-tab' + (this.state.selectedTab === 'settings' ? ' selected' : '') }
                                     onClick={ this.onSelectedTab('settings').bind(this) }
                                 >

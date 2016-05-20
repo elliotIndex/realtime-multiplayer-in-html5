@@ -4,7 +4,8 @@ const React = require('react');
 const SocketClient = require('socket.io-client');
 const RoomList = require('../components/RoomList');
 const Game = require('../components/Game');
-const GameClient = require('../game/GameClient');
+const Network = require('../game/network');
+const ClientGame = require('../game/ClientGame');
 const Stats = require('../components/Stats');
 const debugMode = require('../debug').debugMode;
 
@@ -31,7 +32,17 @@ class Lobby extends React.Component {
 
         socket.on('connect', () => {
             socket.on('onConnected', (data) => {
-                const gameClient = new GameClient(this.props.gameSettings, socket);
+                const gameClient = ClientGame.create({
+                    options: this.props.gameSettings
+                });
+
+                const network = Network.create({
+                    game: gameClient,
+                    pingTimeout: this.props.gameSettings.pingTimeout,
+                    socket
+                });
+
+                gameClient.setNetwork(network);
 
                 this.setState({
                     user: data.user,

@@ -1,12 +1,12 @@
 'use strict';
 
-const GameCore = require('./game');
+const ServerGame = require('./ServerGame');
 const Room = require('./Room');
 
 const debug = require('debug');
 const log = debug('game:server/server');
 
-function create (config, clients) {
+function Lobby (config, clients) {
     const rooms = new Map();
 
     function startGame (room) {
@@ -14,17 +14,16 @@ function create (config, clients) {
     }
 
     function onInput (client, parts) {
-        // The input commands come in like u-l,
-        // so we split them up into separate commands,
-        // and then update the players
         const input_commands = parts[1].split('-');
         const input_time = parts[2].replace('-', '.');
         const input_seq = parts[3];
 
-        // the client should be in a game, so
-        // we can tell that game to handle the input
-        if (client && client.currentRoom && client.currentRoom.gameStarted) {
-            client.currentRoom.receiveClientInput(client, input_commands, input_time, input_seq);
+        const room = client.getCurrentRoom();
+
+        if (room && room.isGameStarted()) {
+            room.receiveClientInput(client, input_commands, input_time, input_seq);
+        } else {
+            log('no room to receive input');
         }
     }
 
@@ -40,24 +39,19 @@ function create (config, clients) {
     }
 
     function createGame (client) {
-        const room = new Room(client);
+        const room = Room.create({
+            owner: client,
+            game: ServerGame.create({ options: config })
+        });
 
-        rooms.set(room.id, room);
-
-        room.setGame(new GameCore(config));
-
-        // room.join(client);
+        rooms.set(room.getId(), room);
+        client.setCurrentRoom(room);
 
         client.emit('onJoinedRoom', { room: room.toJSON() });
 
-        // Start updating the game loop on the server
-        room.game.start();
-
-        log('server host at  ' + room.game.local_time);
-
-        log('player ' + client.id + ' created a room with id ' + room.id);
-
         startGame(room);
+
+        log('player ' + client.getId() + ' created a room with id ' + room.getId());
 
         for (const lobbyClient of clients.values()) {
             lobbyClient.emit('roomCreated', { room: room.toJSON() });
@@ -79,7 +73,7 @@ function create (config, clients) {
 
             rooms.delete(roomId);
 
-            log('game removed. there are now ' + rooms.size + ' rooms');
+            log('game removed. there are now ' + rooms.getSize() + ' rooms');
         } else {
             log('that game was not found!');
         }
@@ -95,4 +89,4 @@ function create (config, clients) {
     };
 }
 
-module.exports = { create };
+module.exports = { create: Lobby };

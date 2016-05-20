@@ -1,75 +1,70 @@
 'use strict';
 
 const uuid = require('node-uuid');
-const GameNetwork = require('./network');
-const Player = require('../lib/Player');
+const Player = require('./ServerPlayer');
 const debug = require('debug');
 const log = debug('game:server/Room');
 
-class Room {
-    constructor (host) {
-        this.id = uuid.v1();
-        this.host = host;
-        this.clients = new Set();
-        this.clients.add(host);
+function Room ({ owner, game }) {
+    const id = uuid.v4();
+    const clients = new Set();
 
-        host.currentRoom = this;
-
-        this.game = null;
-
-        this.network = GameNetwork();
-
-        this.player_host = host;
-        this.gameStarted = false;
+    function getId () {
+        return id;
     }
 
-    setGame (game) {
-        this.game = game;
-        game.network = this.network;
-        this.network.addClientPlayer(this.host, this.game.players.self);
+    function getOwner () {
+        return owner;
     }
 
-    send (message) {
-        for (const client of this.clients) {
+    function getSize () {
+        return clients.size;
+    }
+
+    function isGameStarted () {
+        return game.isStarted();
+    }
+
+    function send (message) {
+        for (const client of clients) {
             client.send(message);
         }
     }
 
-    emit (event, data) {
-        for (const client of this.clients) {
+    function emit (event, data) {
+        for (const client of clients) {
             client.emit(event, data);
         }
     }
 
-    receiveClientInput (...args) {
-        if (this.network) {
-            this.network.receiveClientInput(...args);
-        }
+    function receiveClientInput (...args) {
+        game.getNetwork().receiveClientInput(...args);
     }
 
-    join (client) {
-        this.clients.add(client);
-        client.currentRoom = this;
+    function join (client) {
+        clients.add(client);
 
-        if (this.gameStarted) {
-            const player = new Player(uuid.v4(), client.name);
+        if (game.isStarted()) {
+            const player = Player.create({
+                name: client.getName()
+            });
 
-            this.game.addPlayer(player);
-            this.network.addClientPlayer(client, player);
+            game.addPlayer(player);
+            game.getNetwork().addClientPlayer(client, player);
 
             const state = {
-                serverTime: this.game.local_time,
-                players: Array.from(this.game.players).filter(player => {
-                    return this.network.getPlayerByClient(client) !== player;
+                serverTime: game.getTime(),
+                players: Array.from(game.getPlayers()).filter(player => {
+                    return game.getNetwork().getPlayerByClient(client) !== player;
                 }).map(player => player.toJSON()),
-                ownPlayer: this.network.getPlayerByClient(client).toJSON()
+                ownPlayer: game.getNetwork().getPlayerByClient(client).toJSON()
             };
 
             log('joining game');
 
             client.emit('startGame', state);
 
-            for (const roomClient of this.clients) {
+            for (const roomClient of clients) {
                 if (roomClient !== client) {
                     roomClient.emit('playerJoined', player.toJSON());
                 }
@@ -77,77 +72,86 @@ class Room {
         }
     }
 
-    leave (client) {
-        if (this.gameStarted) {
-            const player = this.network.getPlayerByClient(client);
+    function leave (client) {
+        if (game.isStarted) {
+            const player = game.getNetwork().getPlayerByClient(client);
 
-            for (const roomClient of this.clients) {
+            for (const roomClient of clients) {
                 if (roomClient !== client) {
-                    roomClient.emit('playerLeft', player.id);
+                    roomClient.emit('playerLeft', player.getId());
                 }
             }
 
-            this.game.removePlayer(player);
-            this.network.removeClientPlayer(client);
+            game.removePlayer(player);
+            game.getNetwork().removeClientPlayer(client);
         }
 
-        this.clients.delete(client);
-        client.currentRoom = null;
+        clients.delete(client);
     }
 
-    get size () {
-        return this.clients.size;
-    }
+    function startGame () {
+        for (const client of clients) {
+            const player = Player.create({
+                name: client.getName()
+            });
 
-    startGame () {
-        for (const client of this.clients) {
-            const player = new Player(uuid.v4(), client.name);
-
-            this.game.addPlayer(player);
-            this.network.addClientPlayer(client, player);
+            game.addPlayer(player);
+            game.getNetwork().addClientPlayer(client, player);
         }
 
-        for (const client of this.clients) {
+        for (const client of clients) {
             const state = {
-                serverTime: this.game.local_time,
-                players: Array.from(this.game.players).filter(player => {
-                    return this.network.getPlayerByClient(client) !== player;
+                serverTime: game.getTime(),
+                players: Array.from(game.getPlayers()).filter(player => {
+                    return game.getNetwork().getPlayerByClient(client) !== player;
                 }).map(player => player.toJSON()),
-                ownPlayer: this.network.getPlayerByClient(client).toJSON()
+                ownPlayer: game.getNetwork().getPlayerByClient(client).toJSON()
             };
-
-            log('starting game state', JSON.stringify(state, null, 4));
 
             client.emit('startGame', state);
         }
 
+        log('game started');
 
-        this.gameStarted = true;
+        game.start();
     }
 
-    endGame () {
-        if (this.game) {
-            this.game.stop();
-            this.game = null;
-            this.network = null;
-            this.gameStarted = false;
+    function endGame () {
+        if (game) {
+            game.stop();
         }
 
-        this.clients.clear();
+        clients.clear();
     }
 
-    toJSON () {
+    function toJSON () {
         return {
-            id: this.id,
-            size: this.size,
-            users: Array.from(this.clients).map(client => {
+            id,
+            clients: Array.from(clients).map(client => {
                 return {
-                    id: client.id,
-                    name: client.name
+                    id: client.getId(),
+                    name: client.getName()
                 };
             })
         };
     }
+
+    join(owner);
+
+    return Object.freeze({
+        getId,
+        getOwner,
+        getSize,
+        isGameStarted,
+        send,
+        emit,
+        receiveClientInput,
+        join,
+        leave,
+        startGame,
+        endGame,
+        toJSON
+    });
 }
 
-module.exports = Room;
+module.exports = { create: Room };

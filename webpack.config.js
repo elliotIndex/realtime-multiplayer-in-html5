@@ -5,7 +5,7 @@ const webpack = require('webpack');
 const env = process.env.NODE_ENV;
 
 const config = {
-    devtool: 'cheap-module-source-map',
+    devtool: env === 'production' ? 'cheap-module-source-map' : 'eval-source-map',
     entry: './client/index.js',
     output: {
         path: path.join(__dirname, 'dist'),

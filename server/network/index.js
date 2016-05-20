@@ -16,49 +16,42 @@ function network () {
         playerClients.delete(player);
     }
 
-    function sendUpdates (game) {
-        const players = Array.from(game.players.values());
+    function sendUpdates ({ players, bulletsFired, eventsFired, time }) {
+        for (const player of players.values()) {
+            if (playerClients.has(player)) {
+                const state = {
+                    serverTime: time,
+                    ownPlayer: player.toJSON(),
+                    players: Array.from(players.values()).filter(p => {
+                        return p !== player;
+                    }),
+                    bullets: bulletsFired.filter((bullet) => {
+                        return bullet.firedBy !== player;
+                    }).map((bullet) => {
+                        return Object.assign({}, bullet, {
+                            firedBy: bullet.firedBy.getId()
+                        });
+                    }),
+                    events: eventsFired.filter((event) => {
+                        return event.firedBy !== player;
+                    }).map((event) => {
+                        return {
+                            id: event.id,
+                            name: event.name,
+                            firedBy: event.firedBy.getId()
+                        };
+                    })
+                };
 
-        if (players.length > 1) {
-            for (const player of game.players) {
-                if (playerClients.has(player)) {
-                    const state = {
-                        serverTime: game.local_time,
-                        ownPlayer: player.toJSON(),
-                        players: Array.from(game.players.values()).filter(p => {
-                            return p !== player;
-                        }),
-                        bullets: game.bulletsFired.filter((bullet) => {
-                            return bullet.firedBy !== player;
-                        }).map((bullet) => {
-                            return Object.assign({}, bullet, {
-                                firedBy: bullet.firedBy.id
-                            });
-                        }),
-                        events: game.eventsFired.filter((event) => {
-                            return event.firedBy !== player;
-                        }).map((event) => {
-                            return {
-                                id: event.id,
-                                name: event.name,
-                                firedBy: event.firedBy.id
-                            };
-                        })
-                    };
-
-                    playerClients.get(player).emit('onserverupdate', state);
-                }
+                playerClients.get(player).emit('onServerUpdate', state);
             }
         }
-
-        game.bulletsFired = [];
-        game.eventsFired = [];
     }
 
     function receiveClientInput (client, input, inputTime, inputSeq) {
         const player = clientPlayers.get(client);
 
-        player.inputs.push({
+        player.pushInput({
             inputs: input,
             time: inputTime,
             seq: inputSeq
