@@ -1,6 +1,6 @@
 'use strict';
 
-const MainLoop = require('mainloop.js');
+const MainLoop = require('@arjanfrans/mainloop');
 const GameNetwork = require('./Network');
 const protectObject = require('../lib/protect-object');
 const AbstractGame = require('../lib/AbstractGame');
