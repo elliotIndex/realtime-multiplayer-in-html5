@@ -20,6 +20,7 @@ function network () {
         for (const player of state.players) {
             if (playerClients.has(player)) {
                 const playerState = Object.assign({}, state, {
+                    serverTime: Math.round(state.serverTime * 1000) / 1000,
                     ownPlayer: player.toJSON(),
                     players: state.players.filter((p) => p !== player),
                     bullets: state.bullets.filter((bullet) => {

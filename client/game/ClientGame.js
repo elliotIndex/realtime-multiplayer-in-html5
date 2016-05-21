@@ -117,6 +117,27 @@ function ClientGame ({ options }) {
         }
     }
 
+    function processEventUpdates (data) {
+        for (const bullet of data.bullets) {
+            const player = game.getPlayerById(bullet.firedBy);
+            const position = player.getPosition();
+
+            game.getBulletSystem().addBullet(player, Object.assign({}, bullet, {
+                x: position.x,
+                y: position.y
+            }));
+        }
+
+        for (const eventData of data.events) {
+            const player = game.getPlayerById(eventData.firedBy);
+
+            game.onEvent({
+                id: eventData.id,
+                name: eventData.name
+            }, player);
+        }
+    }
+
     function clientPrediction () {
         // The most recent server update
         const latestServerUpdate = serverUpdates[serverUpdates.length - 1];
@@ -168,7 +189,7 @@ function ClientGame ({ options }) {
         serverTime = data.serverTime;
 
         // Update our local offset time from the last server update
-        clientTime = serverTime - (options.networkOffset / 1000);
+        clientTime = serverTime - (options.networkOffset);
 
         // One approach is to set the position directly as the server tells you.
         // This is a common mistake and causes somewhat playable results on a local LAN, for example,
@@ -184,23 +205,7 @@ function ClientGame ({ options }) {
                 player.setPosition(playerData.position.x, playerData.position.y);
             }
 
-            for (const bullet of data.bullets) {
-                const player = game.getPlayerById(bullet.firedBy);
-
-                game.getBulletSystem().addBullet(player, Object.assign({}, bullet, {
-                    x: player.position.x,
-                    y: player.position.y
-                }));
-            }
-
-            for (const eventData of data.events) {
-                const player = game.getPlayerById(eventData.firedBy);
-
-                game.onEvent({
-                    id: eventData.id,
-                    name: eventData.name
-                }, player);
-            }
+            processEventUpdates(data);
         } else {
             // Cache the data from the server,
             // and then play the timeline
@@ -210,7 +215,7 @@ function ClientGame ({ options }) {
 
             // we limit the buffer in seconds worth of updates
             // 60fps*buffer seconds = number of samples
-            if (serverUpdates.length >= (60 * options.networkBufferSize)) {
+            if (serverUpdates.length >= (game.getSimulationFps() * options.networkBufferSize)) {
                 serverUpdates.splice(0, 1);
             }
 
@@ -269,11 +274,6 @@ function ClientGame ({ options }) {
         // We can interpolate between then based on 'how far in between' we are.
         // This is simple percentage maths, value/target = [0,1] range of numbers.
         // lerp requires the 0,1 value to lerp to? thats the one.
-
-        if (!target || !previous) {
-            return;
-        }
-
         const difference = target.serverTime - clientTime;
         const max_difference = target.serverTime - previous.serverTime;
         let timePoint = difference / max_difference;
@@ -304,38 +304,21 @@ function ClientGame ({ options }) {
                     // to the target from the previous point in the server_updates buffer
                     ghosts.server.setPosition(serverPosition.x, serverPosition.y);
 
-                    const localGhostPosition = lerp(previousPosition, targetPosition, timePoint);
+                    const destinationPosition = lerp(previousPosition, targetPosition, timePoint);
 
-                    ghosts.local.setPosition(localGhostPosition.x, localGhostPosition.y);
+                    ghosts.local.setPosition(destinationPosition.x, destinationPosition.y);
 
                     if (options.clientSmoothing) {
-                        const { x, y } = lerp(player.getPosition(), ghosts.local.getPosition(), interpolation);
+                        const { x, y } = lerp(player.getPosition(), destinationPosition, interpolation);
 
                         player.setPosition(x, y);
                     } else {
-                        const { x, y } = ghosts.local.getPosition();
+                        const { x, y } = destinationPosition;
 
                         player.setPosition(x, y);
                     }
 
-                    for (const bullet of target.bullets) {
-                        const player = game.getPlayerById(bullet.firedBy);
-                        const position = player.getPosition();
-
-                        game.getBulletSystem().addBullet(player, Object.assign({}, bullet, {
-                            x: position.x,
-                            y: position.y
-                        }));
-                    }
-
-                    for (const eventData of target.events) {
-                        const player = game.getPlayerById(eventData.firedBy);
-
-                        game.onEvent({
-                            id: eventData.id,
-                            name: eventData.name
-                        }, player);
-                    }
+                    processEventUpdates(target);
                 }
             }
         }
@@ -343,16 +326,12 @@ function ClientGame ({ options }) {
         // Now, if not predicting client movement , we will maintain the local player position
         // using the same method, smoothing the players information from the past.
         if (!options.clientPrediction && !options.naiveApproach) {
-            // The other players positions in this timeline, behind us and in front of us
-            const my_target_pos = target.ownPlayer.position;
-            const my_past_pos = previous.ownPlayer.position;
-
             const ghosts = getGhosts(localPlayer.getId());
 
             // Snap the ghost to the new server position
             ghosts.server.setPosition(latestServerUpdate.ownPlayer.position.x, latestServerUpdate.ownPlayer.position.y);
 
-            const local_target = lerp(my_past_pos, my_target_pos, timePoint);
+            const local_target = lerp(previous.ownPlayer.position, target.ownPlayer.position, timePoint);
 
             // Smoothly follow the destination position
             if (options.clientSmoothing) {
@@ -363,24 +342,7 @@ function ClientGame ({ options }) {
                 localPlayer.setPosition(local_target.x, local_target.y);
             }
 
-            for (const bullet of latestServerUpdate.bullets) {
-                const player = game.getPlayerById(bullet.firedBy);
-                const { x, y } = player.getPosition();
-
-                game.getBulletSystem().addBullet(player, Object.assign({}, bullet, {
-                    x,
-                    y
-                }));
-            }
-
-            for (const eventData of latestServerUpdate.events) {
-                const player = game.getPlayerById(eventData.firedBy);
-
-                game.onEvent({
-                    id: eventData.id,
-                    name: eventData.name
-                }, player);
-            }
+            processEventUpdates(latestServerUpdate);
         }
     }
 
