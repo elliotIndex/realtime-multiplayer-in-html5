@@ -82,7 +82,7 @@ function Room ({ owner, game }) {
                 }
             }
 
-            game.removePlayer(player);
+            game.removePlayer(player.getId());
             game.getNetwork().removeClientPlayer(client);
         }
 

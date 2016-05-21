@@ -60,4 +60,4 @@ function Client ({ socket, name }) {
     });
 }
 
-module.exports = { create: protectObject(Client) };
+module.exports = { create: Client };

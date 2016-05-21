@@ -16,23 +16,20 @@ function network () {
         playerClients.delete(player);
     }
 
-    function sendUpdates ({ players, bulletsFired, eventsFired, time }) {
-        for (const player of players.values()) {
+    function sendUpdates (state) {
+        for (const player of state.players) {
             if (playerClients.has(player)) {
-                const state = {
-                    serverTime: time,
+                const playerState = Object.assign({}, state, {
                     ownPlayer: player.toJSON(),
-                    players: Array.from(players.values()).filter(p => {
-                        return p !== player;
-                    }),
-                    bullets: bulletsFired.filter((bullet) => {
+                    players: state.players.filter((p) => p !== player),
+                    bullets: state.bullets.filter((bullet) => {
                         return bullet.firedBy !== player;
                     }).map((bullet) => {
                         return Object.assign({}, bullet, {
                             firedBy: bullet.firedBy.getId()
                         });
                     }),
-                    events: eventsFired.filter((event) => {
+                    events: state.events.filter((event) => {
                         return event.getFiredBy() !== player;
                     }).map((event) => {
                         return {
@@ -41,9 +38,9 @@ function network () {
                             firedBy: event.getFiredBy().getId()
                         };
                     })
-                };
+                });
 
-                playerClients.get(player).emit('onServerUpdate', state);
+                playerClients.get(player).emit('onServerUpdate', playerState);
             }
         }
     }

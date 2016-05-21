@@ -7,7 +7,7 @@ function Renderer (ctx, game, options = {}) {
     function draw () {
         ctx.clearRect(0, 0, 720, 480);
 
-        for (const player of game.getPlayers().values()) {
+        for (const player of game.getPlayers()) {
             drawPlayer(ctx, player, {
                 color: '#c58242',
                 infoColor: '#cc8822',

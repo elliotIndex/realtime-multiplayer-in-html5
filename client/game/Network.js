@@ -25,7 +25,7 @@ function Network ({ game, socket, pingTimeout }) {
     }
 
     function onDisconnect () {
-        for (const player of game.getPlayers().values()) {
+        for (const player of game.getPlayers()) {
             if (player !== game.getLocalPlayer()) {
                 game.removePlayer(player.getId());
             }
