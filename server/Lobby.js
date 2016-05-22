@@ -15,28 +15,6 @@ function Lobby ({ config }) {
     }
 
     function onInput (client, parts) {
-        const input_commands = parts[1].split('-');
-        const input_time = parts[2].replace('-', '.');
-        const input_seq = parts[3];
-
-        const room = client.getCurrentRoom();
-
-        if (room && room.isGameStarted()) {
-            room.receiveClientInput(client, input_commands, input_time, input_seq);
-        } else {
-            log('no room to receive input');
-        }
-    }
-
-    function onMessage (client, message) {
-        const message_parts = message.split('.');
-        // The first is always the type of message
-        const message_type = message_parts[0];
-
-        if (message_type === 'i') {
-            // Input handler will forward this
-            onInput(client, message_parts);
-        }
     }
 
     function createGame (client) {
@@ -127,7 +105,22 @@ function Lobby ({ config }) {
         log('\t socket.io:: player ' + client.getId() + ' connected');
 
         client.on('message', (message) => {
-            onMessage(client, message);
+            const parts = message.split('.');
+            const messageType = parts[0];
+
+            if (messageType === 'i') {
+                const inputCommands = parts[1].split('-');
+                const inputTime = parts[2].replace('-', '.');
+                const inputSeq = parts[3];
+
+                const room = client.getCurrentRoom();
+
+                if (room && room.isGameStarted()) {
+                    room.receiveClientInput(client, inputCommands, inputTime, inputSeq);
+                } else {
+                    log('no room to receive input');
+                }
+            }
         });
 
         client.on('disconnect', function () {

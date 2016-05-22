@@ -6,8 +6,7 @@ function draw (ctx, bullets) {
     for (const bullet of bullets) {
         ctx.fillStyle = COLOR;
 
-        const x = bullet.x;
-        const y = bullet.y;
+        const { x, y } = bullet.getPosition();
 
         const width = 4;
         const height = 4;

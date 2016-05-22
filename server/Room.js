@@ -52,17 +52,9 @@ function Room ({ owner, game }) {
             game.addPlayer(player);
             game.getNetwork().addClientPlayer(client, player);
 
-            const state = {
-                serverTime: game.getTime(),
-                players: Array.from(game.getPlayers()).filter(player => {
-                    return game.getNetwork().getPlayerByClient(client) !== player;
-                }).map(player => player.toJSON()),
-                ownPlayer: game.getNetwork().getPlayerByClient(client).toJSON()
-            };
-
             log('joining game');
 
-            client.emit('startGame', state);
+            client.emit('startGame', game.getStateForPlayer(player));
 
             for (const roomClient of clients) {
                 if (roomClient !== client) {
@@ -100,15 +92,9 @@ function Room ({ owner, game }) {
         }
 
         for (const client of clients) {
-            const state = {
-                serverTime: game.getTime(),
-                players: Array.from(game.getPlayers()).filter(player => {
-                    return game.getNetwork().getPlayerByClient(client) !== player;
-                }).map(player => player.toJSON()),
-                ownPlayer: game.getNetwork().getPlayerByClient(client).toJSON()
-            };
+            const player = game.getNetwork().getPlayerByClient(client);
 
-            client.emit('startGame', state);
+            client.emit('startGame', game.getStateForPlayer(player));
         }
 
         log('game started');

@@ -1,6 +1,6 @@
 'use strict';
 
-const MainLoop = require('@arjanfrans/mainloop');
+const Timer = require('../lib/Timer');
 const GameNetwork = require('./Network');
 const protectObject = require('../lib/protect-object');
 const AbstractGame = require('../lib/AbstractGame');
@@ -8,8 +8,13 @@ const AbstractGame = require('../lib/AbstractGame');
 function ServerGame ({ options }) {
     const game = AbstractGame.create({ options });
     const network = GameNetwork();
-    const networkLoop = MainLoop.create({
-        simulationTimestep: options.networkTimestep
+    const networkLoop = Timer.create({
+        interval: options.networkTimestep,
+        onUpdate () {
+            network.sendUpdates(game.getStateForPlayer);
+
+            game.clearEvents();
+        }
     });
 
     function getNetwork () {
@@ -38,19 +43,9 @@ function ServerGame ({ options }) {
 
     function onUpdate (delta) {
         for (const player of game.getPlayers()) {
-            player.setPreviousState({
-                position: player.getPosition()
-            });
-
             player.update(delta);
         }
     }
-
-    networkLoop.setUpdate(() => {
-        network.sendUpdates(game.getState());
-
-        game.clearEvents();
-    });
 
     game.setUpdateHandler(onUpdate);
 

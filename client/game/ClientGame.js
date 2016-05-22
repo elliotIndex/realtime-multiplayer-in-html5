@@ -117,21 +117,16 @@ function ClientGame ({ options }) {
         }
     }
 
+    function processPlayerUpdates (playerData, player) {
+        player.setReloading(playerData.reloading);
+        player.setFireing(playerData.fireing);
+    }
+
     function processEventUpdates (data) {
-        for (const bullet of data.bullets) {
-            const player = game.getPlayerById(bullet.firedBy);
-            const position = player.getPosition();
-
-            game.getBulletSystem().addBullet(player, Object.assign({}, bullet, {
-                x: position.x,
-                y: position.y
-            }));
-        }
-
         for (const eventData of data.events) {
             const player = game.getPlayerById(eventData.firedBy);
 
-            game.onEvent({
+            game.onNetworkEvent({
                 id: eventData.id,
                 name: eventData.name
             }, player);
@@ -139,6 +134,10 @@ function ClientGame ({ options }) {
     }
 
     function clientPrediction () {
+        if (serverUpdates.length <= 0) {
+            return;
+        }
+
         // The most recent server update
         const latestServerUpdate = serverUpdates[serverUpdates.length - 1];
 
@@ -189,7 +188,7 @@ function ClientGame ({ options }) {
         serverTime = data.serverTime;
 
         // Update our local offset time from the last server update
-        clientTime = serverTime - (options.networkOffset);
+        clientTime = serverTime - (options.networkOffset / 1000);
 
         // One approach is to set the position directly as the server tells you.
         // This is a common mistake and causes somewhat playable results on a local LAN, for example,
@@ -203,6 +202,8 @@ function ClientGame ({ options }) {
                 const player = game.getPlayerById(playerData.id);
 
                 player.setPosition(playerData.position.x, playerData.position.y);
+
+                processPlayerUpdates(playerData, player);
             }
 
             processEventUpdates(data);
@@ -221,17 +222,15 @@ function ClientGame ({ options }) {
 
             // Handle the latest positions from the server
             // and make sure to correct our local predictions, making the server have final say.
-            if (serverUpdates.length > 0) {
-                if (localPlayer) {
-                    clientPrediction();
+            if (localPlayer) {
+                clientPrediction();
 
-                    const delta = options.simulationTimestep;
+                const delta = options.simulationTimestep;
 
-                    // Now we reapply all the inputs that we have locally that
-                    // the server hasn't yet confirmed. This will 'keep' our position the same,
-                    // but also confirm the server position at the same time.
-                    game.update(delta);
-                }
+                // Now we reapply all the inputs that we have locally that
+                // the server hasn't yet confirmed. This will 'keep' our position the same,
+                // but also confirm the server position at the same time.
+                game.update(delta);
             }
         }
     }
@@ -270,13 +269,17 @@ function ClientGame ({ options }) {
             previous = serverUpdates[0];
         }
 
+        if (!target || !previous) {
+            return;
+        }
+
         // Now that we have a target and a previous destination,
         // We can interpolate between then based on 'how far in between' we are.
         // This is simple percentage maths, value/target = [0,1] range of numbers.
-        // lerp requires the 0,1 value to lerp to? thats the one.
+        // lerp requires the 0,1 value to lerp to thats the one.
         const difference = target.serverTime - clientTime;
-        const max_difference = target.serverTime - previous.serverTime;
-        let timePoint = difference / max_difference;
+        const maxDifference = target.serverTime - previous.serverTime;
+        let timePoint = difference / maxDifference;
 
         // Because we use the same target and previous in extreme cases
         // It is possible to get incorrect values due to division by 0 difference and such.
@@ -286,40 +289,43 @@ function ClientGame ({ options }) {
 
         // The most recent server update
         const latestServerUpdate = serverUpdates[serverUpdates.length - 1];
+        // console.table(serverUpdates.map(u => u.players[0] ? Object.assign({}, u, { x: u.players[0].position.x, y: u.players[0].position.y }) : null));
 
         for (let i = 0; i < latestServerUpdate.players.length; i++) {
-            const playerData = latestServerUpdate.players[i];
-            const serverPosition = playerData.position;
+            const serverData = latestServerUpdate.players[i];
+            const ghosts = getGhosts(serverData.id);
+            const player = game.getPlayerById(serverData.id);
+
+            if (!player) {
+                break;
+            }
 
             // The other players positions in this timeline, behind us and in front of us
             if (target.players[i] && previous.players[i]) {
+                const serverPosition = serverData.position;
                 const targetPosition = target.players[i].position;
                 const previousPosition = previous.players[i].position;
 
-                const ghosts = getGhosts(playerData.id);
-                const player = game.getPlayerById(playerData.id);
+                // update the dest block, this is a simple lerp
+                // to the target from the previous point in the server_updates buffer
+                ghosts.server.setPosition(serverPosition.x, serverPosition.y);
 
-                if (player) {
-                    // update the dest block, this is a simple lerp
-                    // to the target from the previous point in the server_updates buffer
-                    ghosts.server.setPosition(serverPosition.x, serverPosition.y);
+                const destinationPosition = lerp(previousPosition, targetPosition, timePoint);
 
-                    const destinationPosition = lerp(previousPosition, targetPosition, timePoint);
+                ghosts.local.setPosition(destinationPosition.x, destinationPosition.y);
 
-                    ghosts.local.setPosition(destinationPosition.x, destinationPosition.y);
+                if (options.clientSmoothing) {
+                    const { x, y } = lerp(player.getPosition(), destinationPosition, interpolation);
 
-                    if (options.clientSmoothing) {
-                        const { x, y } = lerp(player.getPosition(), destinationPosition, interpolation);
+                    player.setPosition(x, y);
+                } else {
+                    const { x, y } = destinationPosition;
 
-                        player.setPosition(x, y);
-                    } else {
-                        const { x, y } = destinationPosition;
-
-                        player.setPosition(x, y);
-                    }
-
-                    processEventUpdates(target);
+                    player.setPosition(x, y);
                 }
+
+                processPlayerUpdates(target.players[i], player);
+                processEventUpdates(target);
             }
         }
 
@@ -354,13 +360,7 @@ function ClientGame ({ options }) {
         updateInput();
 
         if (options.clientPrediction && localPlayer) {
-            const player = localPlayer;
-
-            player.setPreviousState({
-                position: player.getPosition()
-            });
-
-            player.update(delta);
+            localPlayer.update(delta);
         }
     }
 

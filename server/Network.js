@@ -16,33 +16,11 @@ function network () {
         playerClients.delete(player);
     }
 
-    function sendUpdates (state) {
-        for (const player of state.players) {
-            if (playerClients.has(player)) {
-                const playerState = Object.assign({}, state, {
-                    serverTime: Math.round(state.serverTime * 1000) / 1000,
-                    ownPlayer: player.toJSON(),
-                    players: state.players.filter((p) => p !== player),
-                    bullets: state.bullets.filter((bullet) => {
-                        return bullet.firedBy !== player;
-                    }).map((bullet) => {
-                        return Object.assign({}, bullet, {
-                            firedBy: bullet.firedBy.getId()
-                        });
-                    }),
-                    events: state.events.filter((event) => {
-                        return event.getFiredBy() !== player;
-                    }).map((event) => {
-                        return {
-                            id: event.getId(),
-                            name: event.getName(),
-                            firedBy: event.getFiredBy().getId()
-                        };
-                    })
-                });
+    function sendUpdates (getStateForPlayer) {
+        for (const player of clientPlayers.values()) {
+            const client = playerClients.get(player);
 
-                playerClients.get(player).emit('onServerUpdate', playerState);
-            }
+            client.emit('onServerUpdate', getStateForPlayer(player));
         }
     }
 
