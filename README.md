@@ -25,6 +25,8 @@ View the demo of the client [here](http://realtime-multiplayer.arjanfrans.com/).
 
 ## Usage
 
+**NOTE: Requires Node version 6 or higher.**
+
 Run the server (will run on `http://localhost:4004`): 
 
 ```
@@ -37,7 +39,7 @@ Run the client (will run on `http://localhost:8080`):
 npm run client
 ```
 
-## Credits
+## Resources
 
 * [realtime-multiplayer-in-html5](https://github.com/underscorediscovery/realtime-multiplayer-in-html5): The original code this project is forked from.
 * [MainLoop.js](https://github.com/IceCreamYou/MainLoop.js): Included in the code to make the game loop in the right way.

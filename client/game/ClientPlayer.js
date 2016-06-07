@@ -1,7 +1,6 @@
 'use strict';
 
 const Player = require('../../lib/Player');
-const protectObject = require('../../lib/protect-object');
 
 function ClientPlayer ({ id, name, x = 0, y = 0, width = 16, height = 16, speed = 50 }) {
     return Player.create({
@@ -15,4 +14,4 @@ function ClientPlayer ({ id, name, x = 0, y = 0, width = 16, height = 16, speed 
     });
 }
 
-module.exports = { create: protectObject(ClientPlayer) };
+module.exports = { create: ClientPlayer };

@@ -2,7 +2,6 @@
 
 const InputHandler = require('./input');
 const AbstractGame = require('../../lib/AbstractGame');
-const protectObject = require('../../lib/protect-object');
 const Ghost = require('./ClientPlayer');
 
 function interpolate (p, n, interpolation) {
@@ -405,6 +404,4 @@ function ClientGame ({ options }) {
     }));
 }
 
-module.exports = {
-    create: protectObject(ClientGame)
-};
+module.exports = { create: ClientGame };

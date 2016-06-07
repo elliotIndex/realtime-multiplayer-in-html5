@@ -2,7 +2,6 @@
 
 const Timer = require('../lib/Timer');
 const GameNetwork = require('./Network');
-const protectObject = require('../lib/protect-object');
 const AbstractGame = require('../lib/AbstractGame');
 
 function ServerGame ({ options }) {
@@ -57,4 +56,4 @@ function ServerGame ({ options }) {
     }));
 }
 
-module.exports = { create: protectObject(ServerGame) };
+module.exports = { create: ServerGame };

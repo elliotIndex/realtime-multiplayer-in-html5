@@ -1,7 +1,5 @@
 'use strict';
 
-const protectObject = require('../../lib/protect-object');
-
 function Ghost ({ x = 0, y = 0, width = 16, height = 16 }) {
     const position = { x, y };
 
@@ -30,4 +28,4 @@ function Ghost ({ x = 0, y = 0, width = 16, height = 16 }) {
     });
 }
 
-module.exports = { create: protectObject(Ghost) };
+module.exports = { create: Ghost };

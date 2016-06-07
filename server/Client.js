@@ -1,7 +1,6 @@
 'use strict';
 
 const uuid = require('node-uuid');
-const protectObject = require('../lib/protect-object');
 
 function Client ({ socket, name }) {
     const id = uuid.v4();

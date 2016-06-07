@@ -1,7 +1,6 @@
 'use strict';
 
 const Player = require('./ClientPlayer');
-const protectObject = require('../../lib/protect-object');
 
 function Network ({ game, socket, pingTimeout }) {
     let previousPing = 0;
@@ -102,4 +101,4 @@ function Network ({ game, socket, pingTimeout }) {
     });
 }
 
-module.exports = { create: protectObject(Network) };
+module.exports = { create: Network };
