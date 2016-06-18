@@ -19,15 +19,12 @@ class Game extends React.Component {
 
     render () {
         return (
-            <div>
-                <canvas
-                    ref="canvas"
-                    className="game"
-                    width={ this.props.width }
-                    height={ this.props.height }
-                >
-                </canvas>
-            </div>
+            <canvas
+                ref="canvas"
+                className="game"
+                width={ this.props.width }
+                height={ this.props.height }
+            />
         );
     }
 }

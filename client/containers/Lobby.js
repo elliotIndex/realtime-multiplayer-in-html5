@@ -123,7 +123,7 @@ class Lobby extends React.Component {
                     <div className="single-column">
                         <div className="menu">
                             <div className="menu-heading">
-                                Logged in: { this.props.name }
+                                Logged in as: { this.props.name }
                                 <button
                                     className="btn btn-sm btn-primary menu-btn"
                                     onClick={ this.onLogout.bind(this) }
@@ -132,7 +132,7 @@ class Lobby extends React.Component {
                                 </button>
                             </div>
                         </div>
-                        </div>
+                    </div>
                 </div>
 
                 <div className="columns">

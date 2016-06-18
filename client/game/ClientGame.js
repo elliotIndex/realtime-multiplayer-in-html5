@@ -4,16 +4,16 @@ const InputHandler = require('./input');
 const AbstractGame = require('../../lib/AbstractGame');
 const Ghost = require('./ClientPlayer');
 
-function interpolate (p, n, interpolation) {
+function interpolate (start, end, interpolation) {
     interpolation = Math.max(0, Math.min(1, interpolation));
 
-    return p + interpolation * (n - p);
+    return start + interpolation * (end - start);
 }
 
-function lerp (a, b, interpolation) {
+function lerp (startVect, endVect, interpolation) {
     return {
-        x: interpolate(a.x, b.x, interpolation),
-        y: interpolate(a.y, b.y, interpolation)
+        x: interpolate(startVect.x, endVect.x, interpolation),
+        y: interpolate(startVect.y, endVect.y, interpolation)
     };
 }
 
